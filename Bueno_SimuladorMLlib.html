@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulador MLlib · Clasificación · PUJ</title>
+<style>
+:root{
+  --bg:#eef2f7; --panel:#fff; --panel-2:#f6f8fb; --panel-3:#e9eef5;
+  --border:#dbe2ec; --border-strong:#c3cedd;
+  --text:#122033; --muted:#55667e; --faint:#8695aa;
+  --puj:#1a4b8c; --accent:#e0601f; --accent-soft:rgba(224,96,31,.12);
+  --blue:#1d5fa8; --blue-soft:rgba(29,95,168,.10);
+  --c0:#2f6fbd; --c1:#e0601f;
+  --green:#23895c; --green-soft:rgba(35,137,92,.12);
+  --red:#c23b33; --red-soft:rgba(194,59,51,.12);
+  --amber:#b7801a; --amber-soft:rgba(183,128,26,.14);
+  --violet:#5b4fc4; --violet-soft:rgba(91,79,196,.12);
+  --grid:rgba(18,32,51,.08);
+  --shadow:0 1px 2px rgba(16,30,54,.06),0 4px 14px rgba(16,30,54,.05);
+  --mono:ui-monospace,"SF Mono","Cascadia Code",Consolas,Menlo,monospace;
+  --sans:"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;
+  color-scheme:light;
+}
+:root[data-theme="dark"]{
+  --bg:#0b111b; --panel:#121a27; --panel-2:#162031; --panel-3:#1d293d;
+  --border:#223047; --border-strong:#31445f;
+  --text:#e4ebf5; --muted:#97a7bd; --faint:#66788f;
+  --puj:#6ea8ee; --accent:#f07a3c; --accent-soft:rgba(240,122,60,.15);
+  --blue:#5b9be0; --blue-soft:rgba(91,155,224,.14);
+  --c0:#5b9be0; --c1:#f07a3c;
+  --green:#3dbb84; --green-soft:rgba(61,187,132,.15);
+  --red:#e8645b; --red-soft:rgba(232,100,91,.16);
+  --amber:#e3b04f; --amber-soft:rgba(227,176,79,.15);
+  --violet:#9187ec; --violet-soft:rgba(145,135,236,.15);
+  --grid:rgba(228,235,245,.08);
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.22);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 var(--sans);-webkit-font-smoothing:antialiased}
+button,select,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.mono{font-family:var(--mono)}
+.muted{color:var(--muted)}
+
+/* ---------- Membrete ---------- */
+.letterhead{position:relative;overflow:hidden;border-bottom:1px solid var(--border);background:
+  radial-gradient(900px 260px at 0% 0%,var(--blue-soft),transparent 70%),
+  radial-gradient(700px 240px at 100% 100%,var(--accent-soft),transparent 70%),var(--panel)}
+.letterhead::before{content:"";position:absolute;left:0;right:0;top:0;height:5px;background:linear-gradient(90deg,var(--puj) 0 70%,var(--accent) 70% 100%)}
+.letterhead::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.5;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:28px 28px;-webkit-mask-image:linear-gradient(90deg,transparent 35%,#000);mask-image:linear-gradient(90deg,transparent 35%,#000)}
+.lh{position:relative;z-index:1;max-width:1480px;margin:0 auto;padding:28px 24px 22px;display:flex;flex-wrap:wrap;align-items:center;gap:22px 28px}
+.lh-mark{font:900 64px/.9 Georgia,"Times New Roman",serif;letter-spacing:.04em;color:var(--puj);padding-right:28px;border-right:2px solid var(--border)}
+.lh-id{display:flex;flex-direction:column;gap:5px;flex:1;min-width:0}
+.lh-uni{font-size:12.5px;font-weight:800;letter-spacing:.22em;color:var(--puj)}
+.lh-title{font-size:30px;font-weight:800;line-height:1.1}
+.lh-title span{color:var(--accent)}
+.lh-sub{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:8px}
+.lh-sub::before{content:"";width:28px;height:3px;border-radius:2px;background:var(--accent)}
+.lh-meta{order:3;width:100%;display:grid;grid-template-columns:1.3fr 1fr .7fr 1fr;gap:12px}
+.lh-meta div{display:flex;flex-direction:column;line-height:1.3;padding:10px 16px;border:1px solid var(--border);border-left:3px solid var(--puj);border-radius:9px;background:var(--panel);box-shadow:var(--shadow);min-width:0}
+.lh-meta span{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);font-weight:700}
+.lh-meta b{font-size:15px;font-weight:700}
+.lh-meta div:nth-child(3) b{color:var(--accent)}
+.icon-btn{width:38px;height:38px;border-radius:9px;border:1px solid var(--border);background:var(--panel-2);display:grid;place-items:center;cursor:pointer;font-size:16px;align-self:flex-start}
+@media (max-width:900px){.lh-meta{grid-template-columns:1fr 1fr}}
+@media (max-width:640px){.lh{padding:20px 14px}.lh-mark{font-size:44px;padding-right:16px}.lh-title{font-size:21px}}
+
+/* ---------- Nav ---------- */
+.nav{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-bottom:1px solid var(--border)}
+.nav-in{max-width:1480px;margin:0 auto;padding:8px 24px;display:flex;gap:6px;overflow-x:auto}
+.nav a{flex:none;text-decoration:none;color:var(--muted);font-weight:650;font-size:12.5px;padding:7px 12px;border-radius:8px;border:1px solid transparent}
+.nav a:hover{color:var(--text);background:var(--panel)}
+.nav a.on{color:var(--text);background:var(--panel);border-color:var(--border)}
+.nav a b{color:var(--accent);margin-right:5px;font-family:var(--mono)}
+
+/* ---------- Layout ---------- */
+.wrap{max-width:1480px;margin:0 auto;padding:20px 24px 50px;display:flex;flex-direction:column;gap:18px}
+@media (max-width:700px){.wrap{padding:14px 12px 40px}.nav-in{padding:8px 12px}}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow)}
+section{scroll-margin-top:60px}
+.sec-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:18px 20px 0;flex-wrap:wrap}
+.sec-head h2{margin:0;font-size:20px;letter-spacing:-.01em;display:flex;align-items:center;gap:10px}
+.sec-head h2 .n{font:700 12px var(--mono);color:#fff;background:var(--puj);border-radius:6px;padding:3px 7px}
+.sec-body{padding:16px 20px 20px}
+.h3{margin:0 0 8px;font-size:11.5px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:8px}
+.h3::before{content:"";width:8px;height:8px;border-radius:2px;background:var(--accent)}
+
+/* ---------- Objetivos ---------- */
+.obj-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:18px}
+@media (max-width:980px){.obj-grid{grid-template-columns:1fr}}
+.goal{border:1px solid var(--border);border-left:4px solid var(--puj);border-radius:10px;padding:14px 16px;background:var(--panel-2)}
+.goal p{margin:4px 0 0}
+.olist{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.olist li{display:grid;grid-template-columns:26px 1fr;gap:8px;align-items:start}
+.olist li i{font:700 11px var(--mono);font-style:normal;color:var(--accent);background:var(--accent-soft);border-radius:6px;text-align:center;padding:3px 0}
+.ctx p{margin:0 0 10px}
+.ctx .q{font-size:15px;font-weight:650;border-radius:10px;padding:12px 14px;background:var(--blue-soft);border:1px solid var(--border);margin-bottom:12px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:650 11px var(--mono);padding:4px 9px;border-radius:999px;border:1px solid var(--border);background:var(--panel-2);color:var(--muted)}
+
+/* ---------- Conceptos ---------- */
+.concepts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (max-width:1100px){.concepts{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:680px){.concepts{grid-template-columns:1fr}}
+.cpt{border:1px solid var(--border);border-radius:10px;padding:14px 16px;background:var(--panel-2);min-width:0}
+.cpt h4{margin:0 0 6px;font-size:14.5px;display:flex;gap:8px;align-items:center}
+.cpt h4 span{font:700 10px var(--mono);color:var(--accent);background:var(--accent-soft);padding:2px 6px;border-radius:5px}
+.cpt p{margin:0 0 8px;font-size:13.2px;color:var(--muted)}
+.cpt p b{color:var(--text)}
+.formula{font:600 13px var(--mono);background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin:6px 0;overflow-x:auto;white-space:nowrap}
+.cpt.wide{grid-column:span 2}
+@media (max-width:680px){.cpt.wide{grid-column:auto}}
+.pipe{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:6px}
+.pipe span{font:650 11px var(--mono);padding:6px 9px;border-radius:7px;border:1px solid var(--border);background:var(--panel)}
+.pipe span.t{border-color:var(--blue);color:var(--blue)}
+.pipe span.e{border-color:var(--accent);color:var(--accent)}
+.pipe em{color:var(--faint);font-style:normal}
+.cmx-demo{display:grid;grid-template-columns:auto 1fr 1fr;gap:4px;font:600 11.5px var(--mono);margin-top:4px}
+.cmx-demo div{padding:6px 8px;border-radius:6px;background:var(--panel);border:1px solid var(--border);text-align:center}
+.cmx-demo .ok{background:var(--green-soft);border-color:transparent;color:var(--green)}
+.cmx-demo .bad{background:var(--red-soft);border-color:transparent;color:var(--red)}
+.cmx-demo .hd{background:transparent;border:0;color:var(--faint)}
+canvas.mini{width:100%;height:120px;display:block;border-radius:8px;background:var(--panel);border:1px solid var(--border)}
+svg.flow{width:100%;height:auto;display:block}
+
+/* ---------- Simulador ---------- */
+.sim{display:grid;grid-template-columns:310px minmax(0,1fr) 300px;gap:16px;align-items:start}
+@media (max-width:1320px){.sim{grid-template-columns:300px minmax(0,1fr)}.sim .right{grid-column:1 / -1}}
+@media (max-width:860px){.sim{grid-template-columns:1fr}}
+.cfg{padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.grp{border-top:1px solid var(--border);padding-top:10px;display:flex;flex-direction:column;gap:9px}
+.grp:first-child{border-top:0;padding-top:0}
+.fld{display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:center}
+.fld label{font-size:12.5px;font-weight:650;line-height:1.25}
+.fld label small{display:block;font-size:10.5px;color:var(--faint);font-weight:500}
+.fld input[type=range]{grid-column:1 / -1;width:100%;accent-color:var(--accent);margin:2px 0 0}
+.num{display:flex;align-items:center;gap:3px;border:1px solid var(--border);border-radius:7px;background:var(--panel-2);height:28px;padding:0 7px}
+.num:focus-within{box-shadow:0 0 0 2px var(--blue)}
+.num input{width:62px;border:0;background:transparent;text-align:right;font:650 12px var(--mono);-moz-appearance:textfield;appearance:textfield}
+.num input:focus{outline:none}
+.num input::-webkit-outer-spin-button,.num input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.num em{font:500 10.5px var(--mono);font-style:normal;color:var(--muted)}
+select{height:30px;border-radius:7px;border:1px solid var(--border);background:var(--panel-2);padding:0 8px;font-size:12.5px;width:100%}
+.chk{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;cursor:pointer}
+.chk input{accent-color:var(--accent);width:16px;height:16px}
+.chk small{color:var(--faint);font-weight:500}
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:36px;padding:0 12px;border-radius:9px;border:1px solid var(--border);background:var(--panel-2);font-weight:700;font-size:12px;letter-spacing:.03em;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--border-strong);background:var(--panel-3)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.blue{background:var(--puj);border-color:var(--puj);color:#fff}
+.btn.full{grid-column:1 / -1}
+.presets{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.preset{font:700 10.5px var(--mono);padding:8px 6px;border-radius:8px;border:1px solid var(--border);background:var(--panel-2);cursor:pointer;letter-spacing:.04em}
+.preset:hover{border-color:var(--accent)}
+
+.center{display:flex;flex-direction:column;gap:16px;min-width:0}
+.status-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 14px}
+.status{display:inline-flex;align-items:center;gap:7px;padding:4px 11px;border-radius:999px;font:700 11px var(--mono);letter-spacing:.08em}
+.status i{width:8px;height:8px;border-radius:50%;background:currentColor}
+.status.READY{color:var(--blue);background:var(--blue-soft)}
+.status.TRAINING{color:var(--green);background:var(--green-soft)}
+.status.TRAINING i{animation:pulse 1s infinite}
+.status.PAUSED{color:var(--amber);background:var(--amber-soft)}
+.status.CONVERGED{color:var(--violet);background:var(--violet-soft)}
+.phase{font:650 11.5px var(--mono);color:var(--muted)}
+.prog{flex:1;min-width:120px;height:6px;border-radius:4px;background:var(--panel-3);overflow:hidden}
+.prog i{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}
+.speed{display:flex;align-items:center;gap:6px;font:650 11px var(--mono);color:var(--muted)}
+.speed input{width:80px;accent-color:var(--accent)}
+
+.viz{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:14px;padding:14px}
+@media (max-width:1100px){.viz{grid-template-columns:1fr}}
+.plot-wrap{position:relative}
+#plot{width:100%;aspect-ratio:1/1;max-height:560px;display:block;border-radius:10px;border:1px solid var(--border);cursor:crosshair;background:var(--panel-2)}
+.plot-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--muted);margin-top:8px}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:-1px;margin-right:5px}
+.tip{position:absolute;pointer-events:none;background:var(--panel);border:1px solid var(--border-strong);border-radius:8px;padding:6px 9px;font:600 11.5px var(--mono);box-shadow:var(--shadow);display:none;white-space:nowrap}
+.side{display:flex;flex-direction:column;gap:10px}
+.box{border:1px solid var(--border);border-radius:10px;background:var(--panel-2);padding:10px 12px}
+.box h5{margin:0 0 6px;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+canvas.ch{width:100%;height:130px;display:block}
+.pred-out{font:650 12.5px var(--mono);line-height:1.6}
+.pred-out .big{font-size:22px}
+.weights{font:12px var(--mono);display:grid;grid-template-columns:auto 1fr auto;gap:3px 8px;align-items:center}
+.weights .wb{height:6px;background:var(--panel-3);border-radius:3px;position:relative}
+.weights .wb i{position:absolute;top:0;bottom:0;border-radius:3px}
+
+/* Cluster */
+.cluster{padding:14px}
+.cl-top{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px}
+@media (max-width:760px){.cl-top{grid-template-columns:1fr}}
+.node{border:1px solid var(--border);border-radius:10px;padding:10px 12px;background:var(--panel-2);position:relative}
+.node::before{content:"";position:absolute;left:-1px;right:-1px;top:-1px;height:3px;border-radius:10px 10px 0 0;background:var(--c)}
+.node h4{margin:0 0 4px;font:700 11px var(--sans);letter-spacing:.12em;text-transform:uppercase}
+.node.drv{--c:var(--puj)} .node.agg{--c:var(--violet)} .node.mem{--c:var(--green)}
+.node.on{box-shadow:0 0 0 3px var(--accent-soft)}
+.kv{display:grid;grid-template-columns:1fr auto;gap:2px 10px;font-size:11.5px}
+.kv span{color:var(--muted)} .kv b{font:650 11.5px var(--mono);text-align:right}
+.membar{height:8px;border-radius:4px;background:var(--panel-3);overflow:hidden;margin-top:6px;position:relative}
+.membar i{position:absolute;left:0;top:0;bottom:0;background:var(--green);transition:width .3s}
+.membar i.over{background:var(--red)}
+.workers{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.wk{border:1px solid var(--border);border-radius:9px;padding:8px 9px;background:var(--panel-2);transition:border-color .2s}
+.wk.busy{border-color:var(--accent)}
+.wk-h{display:flex;justify-content:space-between;font:700 10.5px var(--mono);letter-spacing:.05em;margin-bottom:6px}
+.wk-h em{font-style:normal;color:var(--muted);font-weight:600}
+.parts{display:flex;flex-wrap:wrap;gap:2px;min-height:12px}
+.parts i{width:9px;height:9px;border-radius:2px;background:var(--panel-3);border:1px solid var(--border);transition:background-color .12s}
+.parts i.run{background:var(--accent);border-color:var(--accent)}
+.parts i.done{background:var(--green);border-color:var(--green)}
+.parts i.disk{background:var(--amber);border-color:var(--amber)}
+.parts b{font:600 9.5px var(--mono);color:var(--faint)}
+.wk-f{display:flex;justify-content:space-between;font:600 10px var(--mono);color:var(--muted);margin-top:6px}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-top:10px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+
+/* Métricas */
+.right{display:flex;flex-direction:column;gap:12px}
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:14px}
+.m{border:1px solid var(--border);border-radius:9px;padding:8px 10px;background:var(--panel-2);min-width:0}
+.m span{font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.m b{display:block;font:650 19px/1.25 var(--mono)}
+.m small{font-size:10.5px;color:var(--faint)}
+.m.wide{grid-column:1 / -1}
+.cmx{display:grid;grid-template-columns:62px 1fr 1fr;gap:4px;font:650 12px var(--mono)}
+.cmx div{padding:9px 4px;border-radius:7px;text-align:center}
+.cmx .hd{color:var(--faint);font-size:10px;padding:4px}
+.cmx .tp,.cmx .tn{background:var(--green-soft);color:var(--green)}
+.cmx .fp,.cmx .fn{background:var(--red-soft);color:var(--red)}
+.cmx div small{display:block;font-size:9.5px;opacity:.75}
+.log{max-height:210px;overflow:auto;font:11.5px/1.5 var(--mono);border:1px solid var(--border);border-radius:9px;background:var(--panel-2)}
+.log div{padding:4px 10px;border-bottom:1px solid var(--border);display:grid;grid-template-columns:44px 1fr;gap:6px}
+.log div:last-child{border-bottom:0}
+.log time{color:var(--faint)}
+.log .w{color:var(--amber)} .log .g{color:var(--green)} .log .b{color:var(--blue)}
+pre.code{margin:0;padding:12px 14px;border-radius:10px;background:#0f1726;color:#d6e2f2;font:12px/1.6 var(--mono);overflow:auto;max-height:380px}
+pre.code .k{color:#f2a46b} pre.code .s{color:#8fd19e} pre.code .c{color:#6f819b} pre.code .n{color:#9cc4ff}
+
+/* ---------- Carga ---------- */
+.load-grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:16px}
+@media (max-width:1100px){.load-grid{grid-template-columns:1fr}}
+.table-wrap{overflow:auto;border:1px solid var(--border);border-radius:9px}
+table{width:100%;border-collapse:collapse}
+th{background:var(--panel-2);text-align:left;font:700 9.5px var(--mono);letter-spacing:.1em;color:var(--muted);padding:8px 10px;border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:7px 10px;border-bottom:1px solid var(--border);font:12px var(--mono);white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+td.best{color:var(--green);font-weight:700}
+td.slow{color:var(--red)}
+canvas.big{width:100%;height:240px;display:block}
+.insight{font-size:13px;line-height:1.6;border-left:3px solid var(--accent);padding:10px 14px;background:var(--panel-2);border-radius:0 8px 8px 0}
+.insight b{font-weight:700}
+.bars{display:flex;flex-direction:column;gap:7px}
+.bar{display:grid;grid-template-columns:90px minmax(0,1fr) 72px;gap:10px;align-items:center;font:650 11.5px var(--mono)}
+.bar .t{height:16px;background:var(--panel-3);border-radius:4px;overflow:hidden}
+.bar .t i{display:block;height:100%;background:linear-gradient(90deg,var(--puj),var(--accent));border-radius:4px;transition:width .6s}
+.bar b{text-align:right}
+.foot{font-size:11.5px;color:var(--faint);text-align:center}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+
+<header class="letterhead">
+  <div class="lh">
+    <div class="lh-mark" aria-label="PUJ">PUJ</div>
+    <div class="lh-id">
+      <span class="lh-uni">PONTIFICIA UNIVERSIDAD JAVERIANA</span>
+      <span class="lh-title">SIMULADOR SPARK <span>MLlib · CLASIFICACIÓN</span></span>
+      <span class="lh-sub">Regresión logística distribuida: datos, entrenamiento por particiones, métricas y comportamiento bajo carga</span>
+    </div>
+    <button class="icon-btn" id="themeBtn" type="button" title="Cambiar tema claro / oscuro" aria-label="Cambiar tema">☾</button>
+    <div class="lh-meta">
+      <div><span>Materia</span><b>Procesamiento de Datos a Gran Escala</b></div>
+      <div><span>Autor · Ingeniero</span><b>Luis Ernesto Bueno Solano</b></div>
+      <div><span>Período académico</span><b>2026-30</b></div>
+      <div><span>Desarrollado con IA</span><b>Claude (Anthropic)</b></div>
+    </div>
+  </div>
+</header>
+
+<nav class="nav" aria-label="Secciones">
+  <div class="nav-in">
+    <a href="#objetivos"><b>01</b>Objetivos y contexto</a>
+    <a href="#conceptos"><b>02</b>Parte conceptual</a>
+    <a href="#simulador"><b>03</b>Simulador y configuración</a>
+    <a href="#carga"><b>04</b>Simulador frente a carga</a>
+  </div>
+</nav>
+
+<main class="wrap">
+
+<!-- =================== 01 OBJETIVOS =================== -->
+<section id="objetivos" class="card">
+  <div class="sec-head"><h2><span class="n">01</span>Objetivos y contexto</h2></div>
+  <div class="sec-body obj-grid">
+    <div>
+      <div class="goal">
+        <div class="h3">Objetivo general</div>
+        <p>Entender, experimentando, cómo Spark MLlib entrena un modelo de <b>clasificación binaria</b> (regresión logística) repartiendo el trabajo en un clúster, y cómo cambian la calidad del modelo y el tiempo de entrenamiento al variar los datos, los hiperparámetros y la carga.</p>
+      </div>
+      <div class="h3" style="margin-top:16px">Objetivos específicos</div>
+      <ul class="olist">
+        <li><i>1</i><span>Ver cómo la frontera de decisión se ajusta iteración a iteración mientras baja la función de pérdida.</span></li>
+        <li><i>2</i><span>Entender el entrenamiento distribuido: cada partición calcula su gradiente, el driver los suma (<span class="mono">treeAggregate</span>) y reparte los nuevos pesos.</span></li>
+        <li><i>3</i><span>Interpretar las métricas de evaluación: accuracy, precision, recall, F1, AUC y matriz de confusión.</span></li>
+        <li><i>4</i><span>Medir el efecto de los hiperparámetros: iteraciones, regularización, umbral y expansión polinómica.</span></li>
+        <li><i>5</i><span>Analizar la escalabilidad: tamaño del dataset, número de workers, particiones, <span class="mono">cache()</span> y jobs concurrentes.</span></li>
+      </ul>
+    </div>
+    <div class="ctx">
+      <div class="h3">Contexto</div>
+      <div class="q">“Dado un registro con sus características, ¿pertenece a la clase 1 o a la clase 0?”</div>
+      <p>Clasificar es predecir una <b>categoría</b>: fraude / no fraude, cliente que se va / se queda, arresto grave (felony) / leve (misdemeanor). Cuando los datos son millones de filas, un solo computador no alcanza; por eso se usa <b>Spark MLlib</b>, la librería de machine learning de Spark que entrena modelos en paralelo sobre datos distribuidos (HDFS).</p>
+      <p>El simulador usa un dataset sintético de 2 características para poder <b>dibujar</b> la frontera de decisión. El volumen de datos (filas) sí se configura a escala Big Data: el tiempo del clúster se calcula para ese volumen, mientras que la precisión se obtiene entrenando de verdad, en el navegador, sobre una muestra representativa.</p>
+      <div class="chips">
+        <span class="chip">LogisticRegression</span><span class="chip">VectorAssembler</span><span class="chip">StandardScaler</span><span class="chip">PolynomialExpansion</span><span class="chip">BinaryClassificationEvaluator</span><span class="chip">randomSplit</span><span class="chip">cache()</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =================== 02 CONCEPTOS =================== -->
+<section id="conceptos" class="card">
+  <div class="sec-head"><h2><span class="n">02</span>Parte didáctica y conceptual</h2><span class="muted" style="font-size:12.5px">Lo mínimo para entender lo que pasa en el simulador</span></div>
+  <div class="sec-body concepts">
+    <div class="cpt">
+      <h4><span>A</span>¿Qué es MLlib?</h4>
+      <p>Es la librería de <b>Machine Learning de Apache Spark</b>. Trae algoritmos de clasificación, regresión, clustering y recomendación que corren en paralelo sobre DataFrames distribuidos.</p>
+      <p>Su ventaja: los algoritmos <b>iterativos</b> (como este) leen los mismos datos muchas veces, y Spark los mantiene en memoria con <b>cache()</b> en vez de releer el disco en cada vuelta.</p>
+    </div>
+    <div class="cpt">
+      <h4><span>B</span>Clasificación vs. regresión</h4>
+      <p><b>Clasificación:</b> predice una categoría (sí/no, clase 0/1). Ej.: ¿el arresto es felony?</p>
+      <p><b>Regresión:</b> predice un número continuo. Ej.: ¿cuántos arrestos habrá mañana?</p>
+      <p>Ambas son <b>aprendizaje supervisado</b>: se entrena con ejemplos que ya tienen la respuesta (la etiqueta).</p>
+    </div>
+    <div class="cpt">
+      <h4><span>C</span>Regresión logística</h4>
+      <p>Combina las características con unos pesos y pasa el resultado por la función <b>sigmoide</b>, que lo convierte en una probabilidad entre 0 y 1.</p>
+      <div class="formula">p = σ(w·x + b) = 1 / (1 + e<sup>−(w·x+b)</sup>)</div>
+      <canvas class="mini" id="sigmoid" aria-label="Gráfica de la función sigmoide"></canvas>
+      <p style="margin-top:8px">Si p ≥ <b>umbral</b> (0.5 por defecto) → clase 1. La línea donde p = 0.5 es la <b>frontera de decisión</b>.</p>
+    </div>
+    <div class="cpt wide">
+      <h4><span>D</span>Entrenamiento distribuido en Spark</h4>
+      <p>En cada iteración: el driver <b>envía (broadcast)</b> los pesos actuales; cada executor calcula el <b>gradiente</b> de sus particiones; los gradientes se <b>suman</b> con treeAggregate; el driver actualiza los pesos (MLlib usa L-BFGS; aquí, descenso por gradiente para verlo paso a paso). Se repite hasta converger.</p>
+      <svg class="flow" viewBox="0 0 760 170" role="img" aria-label="Flujo de una iteración distribuida">
+        <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--faint)"/></marker></defs>
+        <rect x="8" y="58" width="130" height="54" rx="9" fill="var(--blue-soft)" stroke="var(--puj)"/>
+        <text x="73" y="82" text-anchor="middle" font-size="13" font-weight="700" fill="var(--text)">Driver</text>
+        <text x="73" y="99" text-anchor="middle" font-size="10.5" fill="var(--muted)" font-family="monospace">pesos w</text>
+        <g font-family="monospace" font-size="10.5">
+          <rect x="250" y="8" width="170" height="40" rx="8" fill="var(--panel)" stroke="var(--border-strong)"/><text x="335" y="32" text-anchor="middle" fill="var(--text)">Executor 1 · ∇ part. 1,2</text>
+          <rect x="250" y="65" width="170" height="40" rx="8" fill="var(--panel)" stroke="var(--border-strong)"/><text x="335" y="89" text-anchor="middle" fill="var(--text)">Executor 2 · ∇ part. 3,4</text>
+          <rect x="250" y="122" width="170" height="40" rx="8" fill="var(--panel)" stroke="var(--border-strong)"/><text x="335" y="146" text-anchor="middle" fill="var(--text)">Executor 3 · ∇ part. 5,6</text>
+        </g>
+        <rect x="520" y="58" width="130" height="54" rx="9" fill="var(--violet-soft)" stroke="var(--violet)"/>
+        <text x="585" y="82" text-anchor="middle" font-size="13" font-weight="700" fill="var(--text)">treeAggregate</text>
+        <text x="585" y="99" text-anchor="middle" font-size="10.5" fill="var(--muted)" font-family="monospace">Σ gradientes</text>
+        <g stroke="var(--faint)" stroke-width="1.6" fill="none" marker-end="url(#ar)">
+          <path d="M138 78 L246 28"/><path d="M138 85 L246 85"/><path d="M138 92 L246 142"/>
+          <path d="M420 28 L516 78"/><path d="M420 85 L516 85"/><path d="M420 142 L516 92"/>
+          <path d="M585 112 C585 165 73 165 73 116" stroke="var(--accent)" stroke-dasharray="5 4"/>
+        </g>
+        <text x="190" y="50" font-size="10" fill="var(--muted)" font-family="monospace" text-anchor="middle">broadcast w</text>
+        <text x="330" y="166" font-size="10" fill="var(--accent)" font-family="monospace" text-anchor="middle"></text>
+        <text x="700" y="140" font-size="10.5" fill="var(--accent)" font-family="monospace" text-anchor="middle">w ← w − α·∇</text>
+      </svg>
+    </div>
+    <div class="cpt">
+      <h4><span>E</span>Pipeline de MLlib</h4>
+      <p><b>Transformers</b> convierten un DataFrame en otro; <b>Estimators</b> aprenden de los datos con <span class="mono">fit()</span> y devuelven un modelo.</p>
+      <div class="pipe"><span class="t">VectorAssembler</span><em>→</em><span class="t">PolynomialExpansion</span><em>→</em><span class="e">StandardScaler</span><em>→</em><span class="e">LogisticRegression</span></div>
+      <p style="margin-top:8px">Azul = Transformer · Naranja = Estimator.</p>
+    </div>
+    <div class="cpt">
+      <h4><span>F</span>Métricas y matriz de confusión</h4>
+      <div class="cmx-demo">
+        <div class="hd"></div><div class="hd">Pred. 1</div><div class="hd">Pred. 0</div>
+        <div class="hd">Real 1</div><div class="ok">VP</div><div class="bad">FN</div>
+        <div class="hd">Real 0</div><div class="bad">FP</div><div class="ok">VN</div>
+      </div>
+      <p style="margin-top:8px"><b>Precision</b> = VP/(VP+FP): de los que dije “1”, cuántos acerté. <b>Recall</b> = VP/(VP+FN): de los “1” reales, cuántos encontré. <b>F1</b> equilibra ambos. <b>AUC</b> mide qué tan bien separa las clases sin importar el umbral (0.5 = azar, 1 = perfecto).</p>
+    </div>
+    <div class="cpt">
+      <h4><span>G</span>Regularización y no linealidad</h4>
+      <p><b>regParam</b> penaliza pesos grandes para evitar sobreajuste. <b>elasticNetParam</b> mezcla L2 (0) y L1 (1); L1 puede dejar pesos en cero.</p>
+      <p>La regresión logística traza una <b>línea recta</b>. Si los datos tienen forma de círculo o XOR, falla. <b>PolynomialExpansion</b> agrega x², y², x·y y permite fronteras curvas. Pruébalo con el preset “Círculos”.</p>
+    </div>
+  </div>
+</section>
+
+<!-- =================== 03 SIMULADOR =================== -->
+<section id="simulador" class="card">
+  <div class="sec-head"><h2><span class="n">03</span>Simulador y configuración</h2><span class="muted" style="font-size:12.5px">Haz clic sobre la gráfica para predecir un punto nuevo</span></div>
+  <div class="sec-body sim">
+
+    <!-- Configuración -->
+    <aside class="card cfg" aria-label="Configuración">
+      <div class="grp">
+        <div class="h3">Datos</div>
+        <div class="fld"><label for="dataset">Forma del dataset</label></div>
+        <select id="dataset">
+          <option value="linear">Lineal (fácil)</option>
+          <option value="overlap">Solapado (ruidoso)</option>
+          <option value="circles">Círculos (no lineal)</option>
+          <option value="xor">XOR (no lineal)</option>
+        </select>
+        <div id="f-rows"></div>
+        <div id="f-noise"></div>
+        <div id="f-split"></div>
+      </div>
+      <div class="grp">
+        <div class="h3">Modelo · LogisticRegression</div>
+        <div id="f-maxIter"></div>
+        <div id="f-step"></div>
+        <div id="f-reg"></div>
+        <div id="f-enet"></div>
+        <div id="f-thr"></div>
+        <label class="chk"><input type="checkbox" id="poly"> PolynomialExpansion (grado 2) <small>fronteras curvas</small></label>
+        <label class="chk"><input type="checkbox" id="scale" checked> StandardScaler</label>
+      </div>
+      <div class="grp">
+        <div class="h3">Clúster</div>
+        <div id="f-workers"></div>
+        <div id="f-cores"></div>
+        <div id="f-ram"></div>
+        <div id="f-parts"></div>
+        <div id="f-jobs"></div>
+        <label class="chk"><input type="checkbox" id="cache" checked> df.cache() <small>datos en memoria</small></label>
+      </div>
+      <div class="grp">
+        <div class="h3">Presets</div>
+        <div class="presets">
+          <button class="preset" data-p="basic" type="button">BÁSICO</button>
+          <button class="preset" data-p="circles" type="button">CÍRCULOS</button>
+          <button class="preset" data-p="overfit" type="button">REGULARIZACIÓN</button>
+          <button class="preset" data-p="bigdata" type="button">BIG DATA</button>
+        </div>
+      </div>
+      <div class="btns">
+        <button class="btn primary full" id="btnTrain" type="button">▶ ENTRENAR (fit)</button>
+        <button class="btn" id="btnPause" type="button">⏸ PAUSA</button>
+        <button class="btn" id="btnStep" type="button">⏭ 1 ITERACIÓN</button>
+        <button class="btn" id="btnReset" type="button">↻ REINICIAR</button>
+        <button class="btn" id="btnData" type="button">🎲 NUEVOS DATOS</button>
+      </div>
+    </aside>
+
+    <!-- Centro -->
+    <div class="center">
+      <div class="card status-bar">
+        <span class="status READY" id="status"><i></i><span>READY</span></span>
+        <span class="phase" id="phase">Iteración 0 / 50</span>
+        <div class="prog"><i id="prog"></i></div>
+        <span class="phase" id="simTime">t = 0.0 s</span>
+        <label class="speed">VEL <input type="range" id="speed" min="0" max="3" step="1" value="1"><b id="speedVal">1x</b></label>
+      </div>
+
+      <div class="card viz">
+        <div class="plot-wrap">
+          <canvas id="plot" aria-label="Datos y frontera de decisión"></canvas>
+          <div class="tip" id="tip"></div>
+          <div class="plot-legend">
+            <span><i class="dot" style="background:var(--c0)"></i>Clase 0</span>
+            <span><i class="dot" style="background:var(--c1)"></i>Clase 1</span>
+            <span><i class="dot" style="background:transparent;border:2px solid var(--text)"></i>Datos de prueba (test)</span>
+            <span>— Frontera p = umbral · fondo = probabilidad</span>
+          </div>
+        </div>
+        <div class="side">
+          <div class="box"><h5>Pérdida (log-loss) por iteración</h5><canvas class="ch" id="lossChart"></canvas></div>
+          <div class="box"><h5>Curva ROC (test)</h5><canvas class="ch" id="rocChart"></canvas></div>
+          <div class="box"><h5>Predicción · model.transform()</h5><div class="pred-out" id="pred">Haz clic en la gráfica.</div></div>
+          <div class="box"><h5>Coeficientes del modelo</h5><div class="weights" id="weights"></div></div>
+        </div>
+      </div>
+
+      <div class="card cluster">
+        <div class="h3">Clúster durante el entrenamiento</div>
+        <div class="cl-top">
+          <div class="node drv" id="nDrv"><h4>Driver</h4>
+            <div class="kv"><span>Fase</span><b id="dPhase">—</b><span>Broadcast pesos</span><b id="dBc">0 KB</b><span>Iteración</span><b id="dIt">0</b></div></div>
+          <div class="node agg" id="nAgg"><h4>treeAggregate</h4>
+            <div class="kv"><span>Gradientes sumados</span><b id="aSum">0</b><span>Profundidad árbol</span><b id="aDepth">0</b><span>Tiempo / iter</span><b id="aIter">0 s</b></div></div>
+          <div class="node mem"><h4>Memoria del clúster</h4>
+            <div class="kv"><span>Dataset</span><b id="mData">0 GB</b><span>Storage (cache)</span><b id="mCap">0 GB</b><span>En caché</span><b id="mPct">0%</b></div>
+            <div class="membar"><i id="mBar"></i></div></div>
+        </div>
+        <div class="workers" id="workers"></div>
+        <div class="legend">
+          <span><i style="background:var(--accent)"></i>Calculando gradiente</span>
+          <span><i style="background:var(--amber)"></i>Leyendo de disco (sin caché)</span>
+          <span><i style="background:var(--green)"></i>Partición lista</span>
+          <span><i style="background:var(--panel-3);border:1px solid var(--border)"></i>En espera</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Derecha -->
+    <div class="right">
+      <div class="card">
+        <div class="metrics">
+          <div class="m"><span>Accuracy</span><b id="mAcc">—</b><small>aciertos / total</small></div>
+          <div class="m"><span>AUC</span><b id="mAuc">—</b><small>área bajo ROC</small></div>
+          <div class="m"><span>Precision</span><b id="mPre">—</b></div>
+          <div class="m"><span>Recall</span><b id="mRec">—</b></div>
+          <div class="m"><span>F1</span><b id="mF1">—</b></div>
+          <div class="m"><span>Log-loss</span><b id="mLoss">—</b></div>
+          <div class="m wide"><span>Matriz de confusión (test)</span>
+            <div class="cmx" style="margin-top:6px">
+              <div class="hd"></div><div class="hd">Pred 1</div><div class="hd">Pred 0</div>
+              <div class="hd">Real 1</div><div class="tp" id="cTP">0<small>VP</small></div><div class="fn" id="cFN">0<small>FN</small></div>
+              <div class="hd">Real 0</div><div class="fp" id="cFP">0<small>FP</small></div><div class="tn" id="cTN">0<small>VN</small></div>
+            </div>
+          </div>
+          <div class="m"><span>Tiempo fit</span><b id="mTime">0.0 s</b><small>simulado en clúster</small></div>
+          <div class="m"><span>Throughput</span><b id="mThr">—</b><small>filas procesadas / s</small></div>
+        </div>
+      </div>
+      <div class="card" style="padding:14px">
+        <div class="h3">Eventos</div>
+        <div class="log" id="log"></div>
+      </div>
+      <div class="card" style="padding:14px">
+        <div class="h3">Código PySpark equivalente</div>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =================== 04 CARGA =================== -->
+<section id="carga" class="card">
+  <div class="sec-head"><h2><span class="n">04</span>Simulador frente a carga</h2>
+    <button class="btn blue" id="btnLoad" type="button">▶ EJECUTAR PRUEBA DE CARGA</button></div>
+  <div class="sec-body">
+    <p class="muted" style="margin:0 0 14px">Se entrena el mismo modelo (mismas iteraciones e hiperparámetros) variando el volumen de datos y el número de workers. Los tiempos salen del mismo modelo de costos del clúster que usa el simulador: cómputo por partición, oleadas de tareas, lectura de disco, treeAggregate y broadcast.</p>
+    <div class="load-grid">
+      <div>
+        <div class="h3">Tiempo de entrenamiento (s) · filas × workers</div>
+        <div class="table-wrap"><table><thead id="loadHead"></thead><tbody id="loadBody"></tbody></table></div>
+        <div class="box" style="margin-top:14px"><h5>Tiempo vs. volumen de datos (escala log)</h5><canvas class="big" id="loadChart"></canvas>
+          <div class="legend" id="loadLegend"></div></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="box"><h5>Jobs concurrentes (usuarios entrenando a la vez)</h5><div class="bars" id="jobBars"></div></div>
+        <div class="box"><h5>Efecto de cache() con la configuración actual</h5><div class="bars" id="cacheBars"></div></div>
+        <div class="insight" id="loadInsight">Pulsa “Ejecutar prueba de carga”.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<p class="foot">Archivo único autosuficiente (HTML + CSS + JavaScript) · sin conexión a Internet · Bueno_SimuladorMLlib.html</p>
+</main>
+
+<script>
+'use strict';
+/* ================= Utilidades ================= */
+const $ = s => document.querySelector(s);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const fmt = (v, d = 2) => (Math.round(v * 10 ** d) / 10 ** d).toFixed(d);
+const pct = v => (v * 100).toFixed(1) + '%';
+function human(n) {
+  if (n >= 1e9) return fmt(n / 1e9, 1) + 'B';
+  if (n >= 1e6) return fmt(n / 1e6, n >= 1e7 ? 0 : 1) + 'M';
+  if (n >= 1e3) return fmt(n / 1e3, n >= 1e4 ? 0 : 1) + 'k';
+  return String(Math.round(n));
+}
+function secs(s) { return s >= 120 ? fmt(s / 60, 1) + ' min' : fmt(s, 1) + ' s'; }
+function mulberry32(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function gauss(r) { let u = 0, v = 0; while (!u) u = r(); while (!v) v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
+const Store = {
+  get(k, d) { try { const v = localStorage.getItem('mllib:' + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem('mllib:' + k, JSON.stringify(v)); } catch (e) {} }
+};
+
+/* ================= Parámetros ================= */
+const FIELDS = {
+  rows:    { el: '#f-rows',    label: 'Filas del dataset', hint: 'volumen simulado en el clúster', min: 1e4, max: 1e9, def: 2e6, log: true, unit: '' },
+  noise:   { el: '#f-noise',   label: 'Ruido', hint: 'qué tanto se mezclan las clases', min: 0, max: 1, step: 0.05, def: 0.55, unit: '' },
+  split:   { el: '#f-split',   label: 'Train / test', hint: 'randomSplit', min: 50, max: 90, step: 5, def: 80, unit: '% train' },
+  maxIter: { el: '#f-maxIter', label: 'maxIter', hint: 'iteraciones máximas', min: 5, max: 300, step: 1, def: 60, unit: '' },
+  step:    { el: '#f-step',    label: 'Tasa de aprendizaje α', hint: 'tamaño del paso del gradiente', min: 0.05, max: 5, step: 0.05, def: 1.5, unit: '' },
+  reg:     { el: '#f-reg',     label: 'regParam (λ)', hint: 'fuerza de la regularización', min: 0, max: 0.5, step: 0.005, def: 0.01, unit: '' },
+  enet:    { el: '#f-enet',    label: 'elasticNetParam', hint: '0 = L2 (Ridge) · 1 = L1 (Lasso)', min: 0, max: 1, step: 0.05, def: 0, unit: '' },
+  thr:     { el: '#f-thr',     label: 'threshold', hint: 'umbral para decidir clase 1', min: 0.05, max: 0.95, step: 0.01, def: 0.5, unit: '' },
+  workers: { el: '#f-workers', label: 'Workers', hint: 'nodos del clúster', min: 1, max: 32, step: 1, def: 4, unit: '' },
+  cores:   { el: '#f-cores',   label: 'Cores por worker', hint: '1 core = 1 tarea a la vez', min: 1, max: 32, step: 1, def: 4, unit: '' },
+  ram:     { el: '#f-ram',     label: 'RAM por worker', hint: '~50% se usa para caché', min: 2, max: 256, step: 2, def: 16, unit: 'GB' },
+  parts:   { el: '#f-parts',   label: 'Particiones', hint: 'df.repartition(n)', min: 1, max: 1024, step: 1, def: 32, unit: '' },
+  jobs:    { el: '#f-jobs',    label: 'Jobs concurrentes', hint: 'otros usuarios usando el clúster', min: 1, max: 20, step: 1, def: 1, unit: '' }
+};
+const DEFAULTS = Object.fromEntries(Object.entries(FIELDS).map(([k, f]) => [k, f.def]));
+Object.assign(DEFAULTS, { dataset: 'linear', poly: false, scale: true, cache: true });
+const PRESETS = {
+  basic:   { ...DEFAULTS },
+  circles: { ...DEFAULTS, dataset: 'circles', noise: 0.25, poly: true, maxIter: 120, step: 2 },
+  overfit: { ...DEFAULTS, dataset: 'overlap', noise: 0.5, reg: 0.2, enet: 0.5, maxIter: 80 },
+  bigdata: { ...DEFAULTS, rows: 5e8, workers: 8, cores: 8, ram: 32, parts: 256, jobs: 3, maxIter: 40 }
+};
+const SAMPLE = 900;   // puntos realmente entrenados en el navegador
+const SEED = 42;
+
+/* ================= Datos ================= */
+const Data = {
+  generate(kind, noise, seed) {
+    const r = mulberry32(seed), pts = [];
+    const sd = 0.08 + noise * 0.32;
+    for (let i = 0; i < SAMPLE; i++) {
+      let x, y, c;
+      if (kind === 'linear' || kind === 'overlap') {
+        c = r() < 0.5 ? 0 : 1;
+        const d = kind === 'linear' ? 0.42 : 0.22;
+        const cx = c ? d : -d, cy = c ? d * 0.8 : -d * 0.8;
+        x = cx + gauss(r) * sd; y = cy + gauss(r) * sd;
+      } else if (kind === 'circles') {
+        c = r() < 0.5 ? 0 : 1;
+        const a = r() * Math.PI * 2, rad = (c ? 0.25 : 0.68) + gauss(r) * sd * 0.45;
+        x = Math.cos(a) * rad; y = Math.sin(a) * rad;
+      } else {
+        x = r() * 1.8 - 0.9; y = r() * 1.8 - 0.9;
+        c = (x * y > 0) ? 1 : 0;
+        x += gauss(r) * sd * 0.35; y += gauss(r) * sd * 0.35;
+      }
+      pts.push({ x: clamp(x, -1, 1), y: clamp(y, -1, 1), c, test: false, part: 0 });
+    }
+    return pts;
+  },
+  split(pts, trainPct, seed) {
+    const r = mulberry32(seed + 7);
+    pts.forEach(p => { p.test = r() * 100 >= trainPct; });
+  }
+};
+
+/* ================= Features (Pipeline) ================= */
+const Features = {
+  raw(p, poly) { return poly ? [p.x, p.y, p.x * p.x, p.y * p.y, p.x * p.y] : [p.x, p.y]; },
+  names(poly) { return poly ? ['x₁', 'x₂', 'x₁²', 'x₂²', 'x₁·x₂'] : ['x₁', 'x₂']; },
+  fitScaler(train, poly) {
+    const d = poly ? 5 : 2, mu = Array(d).fill(0), sd = Array(d).fill(0);
+    train.forEach(p => this.raw(p, poly).forEach((v, j) => mu[j] += v));
+    mu.forEach((_, j) => mu[j] /= train.length);
+    train.forEach(p => this.raw(p, poly).forEach((v, j) => sd[j] += (v - mu[j]) ** 2));
+    sd.forEach((_, j) => sd[j] = Math.sqrt(sd[j] / train.length) || 1);
+    return { mu, sd };
+  },
+  vec(p, poly, scaler) {
+    const v = this.raw(p, poly);
+    return scaler ? v.map((x, j) => (x - scaler.mu[j]) / scaler.sd[j]) : v;
+  }
+};
+
+/* ================= Modelo: LogisticRegression ================= */
+const sigmoid = z => 1 / (1 + Math.exp(-z));
+class LogReg {
+  constructor(d) { this.w = Array(d).fill(0); this.b = 0; }
+  prob(x) { let z = this.b; for (let j = 0; j < x.length; j++) z += this.w[j] * x[j]; return sigmoid(z); }
+  // gradiente parcial de UNA partición (lo que hace cada executor)
+  static partialGradient(model, rows) {
+    const g = Array(model.w.length).fill(0); let gb = 0, loss = 0;
+    for (const r of rows) {
+      const p = model.prob(r.v), e = p - r.c;
+      for (let j = 0; j < g.length; j++) g[j] += e * r.v[j];
+      gb += e;
+      loss += -(r.c * Math.log(p + 1e-12) + (1 - r.c) * Math.log(1 - p + 1e-12));
+    }
+    return { g, gb, loss, n: rows.length };
+  }
+  // el driver aplica el gradiente agregado + regularización elastic net
+  update(agg, step, reg, enet) {
+    const n = Math.max(1, agg.n);
+    for (let j = 0; j < this.w.length; j++) {
+      let w = this.w[j] - step * (agg.g[j] / n + reg * (1 - enet) * this.w[j]);
+      const t = step * reg * enet; // proximal L1 (soft-threshold)
+      w = Math.sign(w) * Math.max(0, Math.abs(w) - t);
+      this.w[j] = w;
+    }
+    this.b -= step * agg.gb / n;
+    const l2 = this.w.reduce((s, w) => s + w * w, 0), l1 = this.w.reduce((s, w) => s + Math.abs(w), 0);
+    return agg.loss / n + reg * ((1 - enet) * 0.5 * l2 + enet * l1);
+  }
+}
+
+/* ================= Métricas (BinaryClassificationEvaluator) ================= */
+const Metrics = {
+  evaluate(rows, model, thr) {
+    let tp = 0, fp = 0, tn = 0, fn = 0, loss = 0;
+    const scored = rows.map(r => { const p = model.prob(r.v); return { p, c: r.c }; });
+    for (const s of scored) {
+      const yhat = s.p >= thr ? 1 : 0;
+      if (yhat && s.c) tp++; else if (yhat && !s.c) fp++; else if (!yhat && s.c) fn++; else tn++;
+      loss += -(s.c * Math.log(s.p + 1e-12) + (1 - s.c) * Math.log(1 - s.p + 1e-12));
+    }
+    const n = scored.length || 1;
+    const acc = (tp + tn) / n, pre = tp + fp ? tp / (tp + fp) : 0, rec = tp + fn ? tp / (tp + fn) : 0;
+    const f1 = pre + rec ? 2 * pre * rec / (pre + rec) : 0;
+    const roc = this.roc(scored);
+    return { tp, fp, tn, fn, acc, pre, rec, f1, auc: roc.auc, roc: roc.pts, loss: loss / n };
+  },
+  roc(scored) {
+    const s = scored.slice().sort((a, b) => b.p - a.p);
+    const P = s.filter(x => x.c).length, N = s.length - P;
+    if (!P || !N) return { auc: 0.5, pts: [[0, 0], [1, 1]] };
+    let tp = 0, fp = 0, auc = 0, prevF = 0, prevT = 0; const pts = [[0, 0]];
+    for (let i = 0; i < s.length; i++) {
+      if (s[i].c) tp++; else fp++;
+      if (i === s.length - 1 || s[i + 1].p !== s[i].p) {
+        const T = tp / P, F = fp / N;
+        auc += (F - prevF) * (T + prevT) / 2; prevF = F; prevT = T; pts.push([F, T]);
+      }
+    }
+    return { auc, pts };
+  }
+};
+
+/* ================= Modelo de costos del clúster ================= */
+const Cost = {
+  // devuelve el desglose de tiempo de UNA iteración y el costo de la lectura inicial
+  iteration(c, d) {
+    const totalCores = c.workers * c.cores;
+    const effCores = Math.max(1, totalCores / c.jobs);                // recursos compartidos con otros jobs
+    const rowsPerPart = c.rows / c.parts;
+    const taskCompute = rowsPerPart * (d + 1) * 6e-9 + 0.004;        // gradiente de una partición
+    const waves = Math.ceil(c.parts / effCores);
+    const bytes = c.rows * (d + 1) * 8 * 1.6;                         // tamaño en memoria (Java overhead)
+    const storage = c.workers * c.ram * 0.5 * 1e9;
+    const cachedFrac = c.cache ? Math.min(1, storage / bytes) : 0;
+    const diskBps = 0.35e9 * c.workers / c.jobs;                      // lectura HDFS agregada
+    const diskPerIter = (1 - cachedFrac) * bytes / diskBps;           // lo que no cabe se relee cada iteración
+    const spill = cachedFrac < 1 && c.cache ? 1.15 : 1;
+    const compute = waves * taskCompute * spill;
+    const depth = Math.max(1, Math.ceil(Math.log2(Math.max(2, c.parts)) / 2));
+    const aggregate = depth * (0.012 + (d + 1) * 8 * c.parts / 1e9) + 0.004 * c.workers;
+    const broadcast = 0.003 * c.workers + 0.01;
+    const schedule = 0.03 + 0.0004 * c.parts;
+    const total = compute + diskPerIter + aggregate + broadcast + schedule;
+    const firstRead = c.cache ? Math.min(1, cachedFrac) * bytes / diskBps : 0;
+    return { total, compute, diskPerIter, aggregate, broadcast, schedule, waves, depth, bytes, storage, cachedFrac, firstRead, effCores };
+  },
+  fit(c, d, iters) { const it = this.iteration(c, d); return it.firstRead + it.total * iters + 1.2; }
+};
+
+/* ================= Gráficas en canvas ================= */
+function setup(cv) {
+  const dpr = Math.min(2, window.devicePixelRatio || 1), w = cv.clientWidth, h = cv.clientHeight;
+  if (!w || !h) return null;
+  if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+  const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, w, h);
+  return { ctx, w, h };
+}
+function hexToRgb(h) { h = h.replace('#', ''); if (h.length === 3) h = h.split('').map(c => c + c).join(''); const n = parseInt(h, 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; }
+function lineChart(cv, series, opt = {}) {
+  const s = setup(cv); if (!s) return; const { ctx, w, h } = s;
+  const pl = 34, pr = 8, pt = 8, pb = 18, pw = w - pl - pr, ph = h - pt - pb;
+  const all = series.flatMap(se => se.pts);
+  const xmin = opt.xmin ?? Math.min(...all.map(p => p[0]), 0), xmax = opt.xmax ?? Math.max(...all.map(p => p[0]), 1);
+  const ymin = opt.ymin ?? 0, ymax = opt.ymax ?? (Math.max(...all.map(p => p[1]), 0.01) * 1.08);
+  const X = v => pl + (opt.logx ? (Math.log10(v) - Math.log10(xmin)) / (Math.log10(xmax) - Math.log10(xmin)) : (v - xmin) / (xmax - xmin || 1)) * pw;
+  const Y = v => pt + ph - (v - ymin) / (ymax - ymin || 1) * ph;
+  ctx.font = '10px ' + css('--mono'); ctx.strokeStyle = css('--grid'); ctx.fillStyle = css('--faint'); ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const v = ymin + (ymax - ymin) * i / 4, y = Math.round(Y(v)) + .5;
+    ctx.beginPath(); ctx.moveTo(pl, y); ctx.lineTo(w - pr, y); ctx.stroke();
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.fillText(opt.yfmt ? opt.yfmt(v) : fmt(v, v < 10 ? 2 : 0), pl - 4, y);
+  }
+  ctx.textBaseline = 'alphabetic';
+  (opt.xticks || []).forEach(t => { ctx.textAlign = 'center'; ctx.fillText(t[1], X(t[0]), h - 4); });
+  if (!opt.xticks) { ctx.textAlign = 'left'; ctx.fillText(opt.xlabel0 ?? fmt(xmin, 0), pl, h - 4); ctx.textAlign = 'right'; ctx.fillText(opt.xlabel1 ?? fmt(xmax, 0), w - pr, h - 4); }
+  if (opt.diag) { ctx.setLineDash([4, 4]); ctx.strokeStyle = css('--faint'); ctx.beginPath(); ctx.moveTo(X(0), Y(0)); ctx.lineTo(X(1), Y(1)); ctx.stroke(); ctx.setLineDash([]); }
+  for (const se of series) {
+    if (se.pts.length < 1) continue;
+    ctx.strokeStyle = se.color; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.beginPath();
+    se.pts.forEach((p, i) => i ? ctx.lineTo(X(p[0]), Y(p[1])) : ctx.moveTo(X(p[0]), Y(p[1]))); ctx.stroke();
+    if (se.fill) { ctx.lineTo(X(se.pts[se.pts.length - 1][0]), Y(ymin)); ctx.lineTo(X(se.pts[0][0]), Y(ymin)); ctx.closePath(); ctx.globalAlpha = .12; ctx.fillStyle = se.color; ctx.fill(); ctx.globalAlpha = 1; }
+    if (se.dots) { ctx.fillStyle = se.color; se.pts.forEach(p => { ctx.beginPath(); ctx.arc(X(p[0]), Y(p[1]), 3, 0, 7); ctx.fill(); }); }
+  }
+  if (!all.length) { ctx.fillStyle = css('--faint'); ctx.textAlign = 'center'; ctx.fillText('Entrena el modelo para ver la curva', pl + pw / 2, pt + ph / 2); }
+}
+
+/* ================= Aplicación ================= */
+const App = {
+  cfg: { ...DEFAULTS, ...Store.get('cfg', {}) },
+  pts: [], train: [], test: [], scaler: null, model: null,
+  iter: 0, losses: [], state: 'READY', simTime: 0, speed: 1, timer: null, anim: null, seed: SEED,
+  ev: null, logs: [], partsByWorker: []
+};
+
+const UI = {
+  init() {
+    for (const [k, f] of Object.entries(FIELDS)) this.buildField(k, f);
+    $('#dataset').value = App.cfg.dataset;
+    $('#poly').checked = App.cfg.poly; $('#scale').checked = App.cfg.scale; $('#cache').checked = App.cfg.cache;
+    $('#dataset').addEventListener('change', e => { App.cfg.dataset = e.target.value; this.changed('data'); });
+    $('#poly').addEventListener('change', e => { App.cfg.poly = e.target.checked; this.changed('model'); });
+    $('#scale').addEventListener('change', e => { App.cfg.scale = e.target.checked; this.changed('model'); });
+    $('#cache').addEventListener('change', e => { App.cfg.cache = e.target.checked; this.changed('cluster'); });
+    $('#btnTrain').addEventListener('click', () => Sim.train());
+    $('#btnPause').addEventListener('click', () => Sim.pause());
+    $('#btnStep').addEventListener('click', () => Sim.stepOnce());
+    $('#btnReset').addEventListener('click', () => { Sim.reset(); log('Modelo reiniciado (pesos en 0).'); });
+    $('#btnData').addEventListener('click', () => { App.seed = Math.floor(Math.random() * 1e6); Sim.prepare(); log('Nuevos datos generados (semilla ' + App.seed + ').', 'b'); });
+    $('#btnLoad').addEventListener('click', () => Load.run());
+    document.querySelectorAll('.preset').forEach(b => b.addEventListener('click', () => this.preset(b.dataset.p)));
+    const sp = $('#speed'), speeds = [0.5, 1, 2, 5];
+    sp.addEventListener('input', () => { App.speed = speeds[+sp.value]; $('#speedVal').textContent = App.speed + 'x'; });
+    $('#themeBtn').addEventListener('click', () => { const t = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'; setTheme(t); Store.set('theme', t); Render.all(); drawSigmoid(); Load.draw(); });
+    const plot = $('#plot');
+    plot.addEventListener('click', e => Render.predictAt(e));
+    plot.addEventListener('mousemove', e => Render.hover(e));
+    plot.addEventListener('mouseleave', () => { $('#tip').style.display = 'none'; });
+    window.addEventListener('resize', () => { Render.all(); drawSigmoid(); Load.draw(); });
+    // resaltar sección activa en la navegación
+    const links = [...document.querySelectorAll('.nav a')];
+    const io = new IntersectionObserver(es => es.forEach(en => { if (en.isIntersecting) links.forEach(a => a.classList.toggle('on', a.getAttribute('href') === '#' + en.target.id)); }), { rootMargin: '-40% 0px -55% 0px' });
+    document.querySelectorAll('main section').forEach(s => io.observe(s));
+  },
+  buildField(k, f) {
+    const host = $(f.el);
+    host.className = 'fld';
+    const toSlider = v => f.log ? Math.log10(v) : v, fromSlider = v => f.log ? Math.round(10 ** v) : v;
+    host.innerHTML = `<label for="n-${k}">${f.label}<small>${f.hint}</small></label>
+      <span class="num"><input type="number" id="n-${k}" min="${f.min}" max="${f.max}" step="${f.log ? 'any' : f.step}"><em>${f.unit}</em></span>
+      <input type="range" aria-label="${f.label}" min="${toSlider(f.min)}" max="${toSlider(f.max)}" step="${f.log ? 0.01 : f.step}">`;
+    const num = host.querySelector('input[type=number]'), rng = host.querySelector('input[type=range]');
+    const show = () => { const v = App.cfg[k]; num.value = f.log ? Math.round(v) : v; rng.value = toSlider(v); };
+    const set = v => { if (!isFinite(v)) return show(); v = clamp(v, f.min, f.max); if (!f.log && f.step >= 1) v = Math.round(v); App.cfg[k] = v; show(); this.changed(this.kindOf(k)); };
+    rng.addEventListener('input', () => { let v = fromSlider(+rng.value); if (f.log) v = Number(v.toPrecision(2)); set(v); });
+    num.addEventListener('change', () => set(+num.value));
+    num.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); set(+num.value); num.select(); } });
+    num.addEventListener('focus', () => num.select());
+    host._show = show; show();
+  },
+  kindOf(k) { return ['noise', 'split'].includes(k) ? 'data' : ['workers', 'cores', 'ram', 'parts', 'jobs', 'rows'].includes(k) ? 'cluster' : 'model'; },
+  changed(kind) {
+    Store.set('cfg', App.cfg);
+    if (kind === 'data') { Sim.prepare(); return; }
+    if (kind === 'cluster') { Render.buildWorkers(); Sim.assignPartitions(); Render.cluster(); Render.code(); Load.scheduleRun(); return; }
+    if (kind === 'model') {
+      if (['poly', 'scale'].includes(kind) || App.model.w.length !== (App.cfg.poly ? 5 : 2)) { Sim.reset(); }
+      else if (App.state !== 'TRAINING') { Sim.evaluate(); }
+      Render.all(); Load.scheduleRun();
+    }
+  },
+  preset(p) {
+    Object.assign(App.cfg, PRESETS[p]);
+    for (const [k, f] of Object.entries(FIELDS)) $(f.el)._show();
+    $('#dataset').value = App.cfg.dataset; $('#poly').checked = App.cfg.poly; $('#scale').checked = App.cfg.scale; $('#cache').checked = App.cfg.cache;
+    Store.set('cfg', App.cfg);
+    Sim.prepare();
+    log(`Preset ${p.toUpperCase()} aplicado. Pulsa ENTRENAR.`, 'b');
+  }
+};
+
+function log(msg, cls = '') {
+  const t = App.simTime;
+  App.logs.unshift({ t, msg, cls });
+  if (App.logs.length > 120) App.logs.pop();
+  $('#log').innerHTML = App.logs.map(l => `<div><time>${fmt(l.t, 1)}s</time><span class="${l.cls}">${l.msg}</span></div>`).join('');
+}
+
+/* ================= Motor del simulador ================= */
+const Sim = {
+  prepare() {
+    this.stop();
+    App.pts = Data.generate(App.cfg.dataset, App.cfg.noise, App.seed);
+    Data.split(App.pts, App.cfg.split, App.seed);
+    this.reset();
+  },
+  reset() {
+    this.stop();
+    const c = App.cfg;
+    App.train = App.pts.filter(p => !p.test); App.test = App.pts.filter(p => p.test);
+    App.scaler = c.scale ? Features.fitScaler(App.train, c.poly) : null;
+    const vec = p => ({ v: Features.vec(p, c.poly, App.scaler), c: p.c, ref: p });
+    App.trainV = App.train.map(vec); App.testV = App.test.map(vec);
+    App.model = new LogReg(c.poly ? 5 : 2);
+    App.iter = 0; App.losses = []; App.simTime = 0; App.lastIter = null;
+    this.setState('READY');
+    this.assignPartitions();
+    this.evaluate();
+    Render.buildWorkers(); Render.all();
+  },
+  // reparto de las filas de entrenamiento entre particiones (como df.repartition(n))
+  assignPartitions() {
+    const P = App.cfg.parts;
+    App.partRows = Array.from({ length: P }, () => []);
+    App.trainV.forEach((r, i) => { App.partRows[i % P].push(r); r.ref.part = i % P; });
+  },
+  evaluate() { App.ev = Metrics.evaluate(App.testV, App.model, App.cfg.thr); App.evTrain = Metrics.evaluate(App.trainV, App.model, App.cfg.thr); },
+  setState(s) {
+    App.state = s;
+    const el = $('#status'); el.className = 'status ' + s; el.lastElementChild.textContent = s;
+    $('#btnTrain').disabled = s === 'TRAINING';
+    $('#btnPause').disabled = s !== 'TRAINING';
+    $('#btnStep').disabled = s === 'TRAINING';
+    $('#btnTrain').textContent = s === 'PAUSED' ? '▶ CONTINUAR' : s === 'CONVERGED' ? '▶ RE-ENTRENAR' : '▶ ENTRENAR (fit)';
+  },
+  train() {
+    if (App.state === 'CONVERGED') this.reset();
+    if (App.iter === 0) {
+      const it = Cost.iteration(App.cfg, App.model.w.length);
+      log(`fit() iniciado: ${human(App.cfg.rows)} filas, ${App.cfg.parts} particiones en ${App.cfg.workers} workers.`, 'b');
+      if (App.cfg.cache) { App.simTime += it.firstRead; log(`Lectura inicial desde HDFS y cache(): ${secs(it.firstRead)} (${pct(it.cachedFrac)} cabe en memoria).`); }
+      else log('Sin cache(): cada iteración volverá a leer los datos del disco.', 'w');
+      if (it.cachedFrac < 1 && App.cfg.cache) log('El dataset no cabe completo en memoria: parte se relee de disco en cada iteración.', 'w');
+    }
+    this.setState('TRAINING');
+    this.loop();
+  },
+  pause() { if (App.state === 'TRAINING') { this.stop(); this.setState('PAUSED'); log('Entrenamiento en pausa.'); } },
+  stop() { clearTimeout(App.timer); cancelAnimationFrame(App.anim); App.timer = null; },
+  stepOnce() { if (App.state === 'CONVERGED') return; if (App.iter === 0 && App.state === 'READY') { this.train(); this.pause(); return; } this.runIteration(() => {}); },
+  loop() {
+    if (App.state !== 'TRAINING') return;
+    this.runIteration(done => {
+      if (done) { this.finish(done); return; }
+      App.timer = setTimeout(() => this.loop(), 30 / App.speed);
+    });
+  },
+  // Una iteración = broadcast → map (gradiente por partición) → treeAggregate → update
+  runIteration(cb) {
+    const c = App.cfg, model = App.model, d = model.w.length;
+    const cost = Cost.iteration(c, d);
+    const partials = App.partRows.map(rows => LogReg.partialGradient(model, rows));     // executors
+    const agg = partials.reduce((a, p) => { p.g.forEach((v, j) => a.g[j] += v); a.gb += p.gb; a.loss += p.loss; a.n += p.n; return a; }, { g: Array(d).fill(0), gb: 0, loss: 0, n: 0 }); // treeAggregate
+    const prevLoss = App.losses.length ? App.losses[App.losses.length - 1][1] : Infinity;
+    const loss = model.update(agg, c.step, c.reg, c.enet);                              // driver
+    App.iter++; App.losses.push([App.iter, loss]); App.simTime += cost.total; App.lastIter = cost;
+    this.evaluate();
+    const dur = Math.max(140, 520 / App.speed);
+    Render.animateIteration(cost, dur, () => {
+      Render.all();
+      if (App.iter % 10 === 0 || App.iter === 1) log(`Iter ${App.iter}: loss ${fmt(loss, 4)} · acc test ${pct(App.ev.acc)} · ${secs(cost.total)}/iter`);
+      let done = null;
+      if (!isFinite(loss) || loss > 50) done = 'diverge';
+      else if (Math.abs(prevLoss - loss) < 1e-5) done = 'tol';
+      else if (App.iter >= c.maxIter) done = 'max';
+      cb(done);
+    });
+  },
+  finish(why) {
+    this.stop(); this.setState('CONVERGED');
+    const e = App.ev;
+    if (why === 'diverge') log('La pérdida divergió: la tasa de aprendizaje es demasiado alta.', 'w');
+    else log(why === 'tol' ? `Convergió en ${App.iter} iteraciones (cambio de loss < 1e-5).` : `Se alcanzó maxIter = ${App.iter}.`, 'g');
+    log(`Evaluación test → accuracy ${pct(e.acc)}, AUC ${fmt(e.auc, 3)}, F1 ${fmt(e.f1, 3)}. Tiempo total ${secs(App.simTime)}.`, 'g');
+    if (App.evTrain.acc - e.acc > 0.06) log('Accuracy de train mucho mayor que test: posible sobreajuste. Sube regParam.', 'w');
+    if (e.auc < 0.7 && !App.cfg.poly && (App.cfg.dataset === 'circles' || App.cfg.dataset === 'xor')) log('Datos no lineales: activa PolynomialExpansion.', 'w');
+    Render.all();
+  }
+};
+
+/* ================= Render ================= */
+const Render = {
+  plotBox() { const cv = $('#plot'); return { cv, w: cv.clientWidth, h: cv.clientHeight }; },
+  toPx(x, y, w, h) { return [(x + 1) / 2 * w, (1 - (y + 1) / 2) * h]; },
+  fromPx(px, py, w, h) { return [px / w * 2 - 1, 1 - py / h * 2]; },
+  probAt(x, y) { return App.model.prob(Features.vec({ x, y }, App.cfg.poly, App.scaler)); },
+  plot() {
+    const s = setup($('#plot')); if (!s) return; const { ctx, w, h } = s;
+    const c0 = hexToRgb(css('--c0')), c1 = hexToRgb(css('--c1'));
+    const G = 72, cw = w / G, chh = h / G;
+    for (let i = 0; i < G; i++) for (let j = 0; j < G; j++) {
+      const [x, y] = this.fromPx((i + .5) * cw, (j + .5) * chh, w, h);
+      const p = this.probAt(x, y), a = Math.abs(p - 0.5) * 0.5 + 0.04, col = p >= App.cfg.thr ? c1 : c0;
+      ctx.fillStyle = `rgba(${col[0]},${col[1]},${col[2]},${a})`;
+      ctx.fillRect(i * cw, j * chh, cw + 1, chh + 1);
+    }
+    // frontera de decisión (contorno p = umbral) por marching squares simple
+    ctx.strokeStyle = css('--text'); ctx.lineWidth = 2.2;
+    const N = 90, vals = [];
+    for (let i = 0; i <= N; i++) { vals.push([]); for (let j = 0; j <= N; j++) { const [x, y] = this.fromPx(i / N * w, j / N * h, w, h); vals[i].push(this.probAt(x, y) - App.cfg.thr); } }
+    ctx.beginPath();
+    const lerp = (a, b) => a / (a - b);
+    for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {
+      const v = [vals[i][j], vals[i + 1][j], vals[i + 1][j + 1], vals[i][j + 1]];
+      const P = [[i, j], [i + 1, j], [i + 1, j + 1], [i, j + 1]], cross = [];
+      for (let e = 0; e < 4; e++) { const a = v[e], b = v[(e + 1) % 4]; if ((a < 0) !== (b < 0)) { const t = lerp(a, b), p0 = P[e], p1 = P[(e + 1) % 4]; cross.push([(p0[0] + (p1[0] - p0[0]) * t) / N * w, (p0[1] + (p1[1] - p0[1]) * t) / N * h]); } }
+      if (cross.length >= 2) { ctx.moveTo(cross[0][0], cross[0][1]); ctx.lineTo(cross[1][0], cross[1][1]); if (cross.length === 4) { ctx.moveTo(cross[2][0], cross[2][1]); ctx.lineTo(cross[3][0], cross[3][1]); } }
+    }
+    ctx.stroke();
+    // puntos
+    const thr = App.cfg.thr, red = css('--red');
+    for (const p of App.pts) {
+      const [px, py] = this.toPx(p.x, p.y, w, h);
+      ctx.beginPath(); ctx.arc(px, py, p.test ? 4.2 : 3.2, 0, 7);
+      if (p.test) {
+        const wrong = (this.probAt(p.x, p.y) >= thr ? 1 : 0) !== p.c;
+        ctx.fillStyle = css(p.c ? '--c1' : '--c0'); ctx.fill();
+        ctx.lineWidth = wrong ? 2.4 : 1.6; ctx.strokeStyle = wrong ? red : css('--text'); ctx.stroke();
+      } else { ctx.globalAlpha = .78; ctx.fillStyle = css(p.c ? '--c1' : '--c0'); ctx.fill(); ctx.globalAlpha = 1; }
+    }
+    if (App.probe) {
+      const [px, py] = this.toPx(App.probe.x, App.probe.y, w, h);
+      ctx.strokeStyle = css('--text'); ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(px - 9, py); ctx.lineTo(px + 9, py); ctx.moveTo(px, py - 9); ctx.lineTo(px, py + 9); ctx.stroke();
+      ctx.beginPath(); ctx.arc(px, py, 6, 0, 7); ctx.stroke();
+    }
+  },
+  predictAt(e) {
+    const r = e.target.getBoundingClientRect();
+    const [x, y] = this.fromPx(e.clientX - r.left, e.clientY - r.top, r.width, r.height);
+    App.probe = { x, y }; this.predict(); this.plot();
+  },
+  predict() {
+    if (!App.probe) return;
+    const { x, y } = App.probe, p = this.probAt(x, y), cls = p >= App.cfg.thr ? 1 : 0;
+    $('#pred').innerHTML = `features = [${fmt(x)}, ${fmt(y)}]<br>probability = <b>${fmt(p, 3)}</b><br>prediction = <span class="big" style="color:var(${cls ? '--c1' : '--c0'})">${cls}</span> <span class="muted">(umbral ${fmt(App.cfg.thr)})</span>`;
+  },
+  hover(e) {
+    const r = e.target.getBoundingClientRect(), tip = $('#tip');
+    const [x, y] = this.fromPx(e.clientX - r.left, e.clientY - r.top, r.width, r.height);
+    tip.style.display = 'block'; tip.textContent = `p(1) = ${fmt(this.probAt(x, y), 3)}`;
+    tip.style.left = Math.min(r.width - 110, e.clientX - r.left + 12) + 'px'; tip.style.top = (e.clientY - r.top + 12) + 'px';
+  },
+  metrics() {
+    const e = App.ev, trained = App.iter > 0;
+    const set = (id, v) => { $(id).textContent = trained ? v : '—'; };
+    set('#mAcc', pct(e.acc)); set('#mAuc', fmt(e.auc, 3)); set('#mPre', fmt(e.pre, 3)); set('#mRec', fmt(e.rec, 3)); set('#mF1', fmt(e.f1, 3)); set('#mLoss', fmt(e.loss, 4));
+    $('#cTP').firstChild.textContent = e.tp; $('#cFN').firstChild.textContent = e.fn; $('#cFP').firstChild.textContent = e.fp; $('#cTN').firstChild.textContent = e.tn;
+    $('#mTime').textContent = secs(App.simTime);
+    $('#mThr').textContent = App.simTime > 0 ? human(App.cfg.rows * App.iter / App.simTime) + '/s' : '—';
+    $('#phase').textContent = `Iteración ${App.iter} / ${App.cfg.maxIter}`;
+    $('#prog').style.width = Math.min(100, App.iter / App.cfg.maxIter * 100) + '%';
+    $('#simTime').textContent = 't = ' + secs(App.simTime);
+    const names = Features.names(App.cfg.poly), w = App.model.w, mx = Math.max(1, ...w.map(Math.abs), Math.abs(App.model.b));
+    const row = (n, v) => { const pc = Math.abs(v) / mx * 50; return `<span>${n}</span><span class="wb"><i style="left:${v >= 0 ? 50 : 50 - pc}%;width:${pc}%;background:var(${v >= 0 ? '--c1' : '--c0'})"></i></span><b>${fmt(v, 3)}</b>`; };
+    $('#weights').innerHTML = row('b', App.model.b) + w.map((v, j) => row(names[j], v)).join('');
+  },
+  charts() {
+    lineChart($('#lossChart'), [{ pts: App.losses, color: css('--accent'), fill: true }], { xmin: 0, xmax: Math.max(10, App.cfg.maxIter), ymin: 0, xlabel0: '0', xlabel1: String(App.cfg.maxIter) });
+    lineChart($('#rocChart'), App.iter ? [{ pts: App.ev.roc, color: css('--violet'), fill: true }] : [], { xmin: 0, xmax: 1, ymin: 0, ymax: 1, diag: true, xlabel0: 'FPR 0', xlabel1: '1', yfmt: v => fmt(v, 1) });
+  },
+  buildWorkers() {
+    const c = App.cfg, host = $('#workers');
+    App.partsByWorker = Array.from({ length: c.workers }, () => []);
+    for (let p = 0; p < c.parts; p++) App.partsByWorker[p % c.workers].push(p);
+    const MAXSQ = 48;
+    host.innerHTML = App.partsByWorker.map((ps, i) => `<div class="wk" id="wk${i}"><div class="wk-h"><span>WORKER ${String(i + 1).padStart(2, '0')}</span><em>${c.cores}c · ${c.ram}GB</em></div>
+      <div class="parts">${ps.slice(0, MAXSQ).map(() => '<i></i>').join('')}${ps.length > MAXSQ ? `<b>+${ps.length - MAXSQ}</b>` : ''}</div>
+      <div class="wk-f"><span>${ps.length} part.</span><span>${human(c.rows / c.parts * ps.length)} filas</span></div></div>`).join('');
+  },
+  cluster() {
+    const c = App.cfg, it = App.lastIter || Cost.iteration(c, App.model.w.length);
+    $('#dIt').textContent = App.iter;
+    $('#dBc').textContent = fmt((App.model.w.length + 1) * 8 * c.workers / 1024, 2) + ' KB';
+    $('#aSum').textContent = c.parts + ' / iter';
+    $('#aDepth').textContent = it.depth;
+    $('#aIter').textContent = secs(it.total);
+    $('#mData').textContent = fmt(it.bytes / 1e9, it.bytes > 1e10 ? 0 : 2) + ' GB';
+    $('#mCap').textContent = fmt(it.storage / 1e9, 0) + ' GB';
+    $('#mPct').textContent = c.cache ? pct(it.cachedFrac) : 'sin cache()';
+    const bar = $('#mBar'); bar.style.width = (c.cache ? it.cachedFrac * 100 : 0) + '%'; bar.classList.toggle('over', c.cache && it.cachedFrac < 1);
+  },
+  // anima: broadcast → map por oleadas → treeAggregate → update
+  animateIteration(cost, dur, done) {
+    const c = App.cfg, cores = Math.max(1, Math.floor(cost.effCores / c.workers)) || 1;
+    const disk = cost.diskPerIter > 0.0001;
+    const wks = App.partsByWorker.map((ps, i) => ({ el: document.getElementById('wk' + i), sq: [...document.querySelectorAll('#wk' + i + ' .parts i')], n: ps.length }));
+    const t0 = performance.now(), mapEnd = 0.75;
+    $('#nDrv').classList.add('on');
+    const frame = now => {
+      const p = Math.min(1, (now - t0) / dur);
+      let phase;
+      if (p < 0.12) phase = 'broadcast w';
+      else if (p < mapEnd) phase = disk ? 'leer disco + ∇' : 'map: ∇ por partición';
+      else if (p < 0.92) phase = 'treeAggregate Σ∇';
+      else phase = 'update w';
+      $('#dPhase').textContent = phase;
+      $('#nAgg').classList.toggle('on', p >= mapEnd && p < 0.92);
+      $('#nDrv').classList.toggle('on', p < 0.12 || p >= 0.92);
+      const mp = clamp((p - 0.12) / (mapEnd - 0.12), 0, 1);
+      for (const w of wks) {
+        if (!w.el) continue;
+        const wavesW = Math.max(1, Math.ceil(w.n / cores)), curWave = Math.floor(mp * wavesW);
+        w.el.classList.toggle('busy', mp > 0 && mp < 1);
+        w.sq.forEach((sq, k) => {
+          const wave = Math.floor(k / cores);
+          sq.className = mp >= 1 || wave < curWave ? 'done' : wave === curWave && mp > 0 ? (disk && (mp * wavesW - curWave) < 0.4 ? 'disk' : 'run') : '';
+        });
+      }
+      if (p < 1) App.anim = requestAnimationFrame(frame);
+      else { $('#nDrv').classList.remove('on'); $('#nAgg').classList.remove('on'); wks.forEach(w => w.el && w.el.classList.remove('busy')); done(); }
+    };
+    App.anim = requestAnimationFrame(frame);
+  },
+  code() {
+    const c = App.cfg;
+    const k = s => `<span class="k">${s}</span>`, s = t => `<span class="s">${t}</span>`, n = v => `<span class="n">${v}</span>`, cm = t => `<span class="c"># ${t}</span>`;
+    const stages = ['assembler'].concat(c.poly ? ['poly'] : []).concat(c.scale ? ['scaler'] : []).concat(['lr']);
+    const feat = c.scale ? 'scaled' : c.poly ? 'poly' : 'features';
+    $('#code').innerHTML =
+`${k('from')} pyspark.ml ${k('import')} Pipeline
+${k('from')} pyspark.ml.feature ${k('import')} VectorAssembler${c.poly ? ', PolynomialExpansion' : ''}${c.scale ? ', StandardScaler' : ''}
+${k('from')} pyspark.ml.classification ${k('import')} LogisticRegression
+${k('from')} pyspark.ml.evaluation ${k('import')} BinaryClassificationEvaluator
+
+${cm(`${human(c.rows)} filas en ${c.parts} particiones`)}
+df = spark.read.parquet(${s('"hdfs:///datos/registros.parquet"')}) \\
+       .repartition(${n(c.parts)})${c.cache ? '.cache()' : ''}
+train, test = df.randomSplit([${n(fmt(c.split / 100, 2))}, ${n(fmt(1 - c.split / 100, 2))}], seed=${n(42)})
+
+assembler = VectorAssembler(inputCols=[${s('"x1"')}, ${s('"x2"')}], outputCol=${s('"features"')})
+${c.poly ? `poly = PolynomialExpansion(degree=${n(2)}, inputCol=${s('"features"')}, outputCol=${s('"poly"')})\n` : ''}${c.scale ? `scaler = StandardScaler(inputCol=${s(`"${c.poly ? 'poly' : 'features'}"`)}, outputCol=${s('"scaled"')}, withMean=${k('True')})\n` : ''}lr = LogisticRegression(featuresCol=${s(`"${feat}"`)}, labelCol=${s('"label"')},
+        maxIter=${n(c.maxIter)}, regParam=${n(c.reg)}, elasticNetParam=${n(c.enet)},
+        threshold=${n(c.thr)})
+
+model = Pipeline(stages=[${stages.join(', ')}]).fit(train)
+pred = model.transform(test)
+
+auc = BinaryClassificationEvaluator(metricName=${s('"areaUnderROC"')}).evaluate(pred)
+${k('print')}(${s('"AUC:"')}, auc)   ${cm('simulado: ' + (App.iter ? fmt(App.ev.auc, 3) : '—'))}
+
+${cm(`spark-submit --num-executors ${c.workers} --executor-cores ${c.cores} --executor-memory ${c.ram}g`)}`;
+  },
+  all() { this.plot(); this.predict(); this.metrics(); this.charts(); this.cluster(); this.code(); }
+};
+
+function drawSigmoid() {
+  const pts = []; for (let z = -8; z <= 8; z += 0.2) pts.push([z, sigmoid(z)]);
+  lineChart($('#sigmoid'), [{ pts, color: css('--accent') }], { xmin: -8, xmax: 8, ymin: 0, ymax: 1, xticks: [[-8, 'z = −8'], [0, '0'], [8, '+8']], yfmt: v => fmt(v, 1) });
+}
+
+/* ================= Prueba de carga ================= */
+const ROWS = [1e5, 1e6, 1e7, 1e8, 1e9];
+const WKS = [2, 4, 8, 16];
+const Load = {
+  res: null,
+  scheduleRun() { clearTimeout(this._t); this._t = setTimeout(() => { if (this.res) this.run(true); }, 250); },
+  run(quiet) {
+    const c = App.cfg, d = c.poly ? 5 : 2, iters = c.maxIter;
+    const time = (rows, workers, extra = {}) => Cost.fit({ ...c, rows, workers, parts: Math.max(c.parts, workers * c.cores * 2), ...extra }, d, iters);
+    this.res = { iters, grid: ROWS.map(r => WKS.map(w => time(r, w))) };
+    this.res.jobs = [1, 2, 4, 8].map(j => [j, Cost.fit({ ...c, jobs: j }, d, iters)]);
+    this.res.cache = [['con cache()', Cost.fit({ ...c, cache: true }, d, iters)], ['sin cache()', Cost.fit({ ...c, cache: false }, d, iters)]];
+    this.render();
+    if (!quiet) log(`Prueba de carga: ${ROWS.length * WKS.length} configuraciones evaluadas con ${iters} iteraciones.`, 'b');
+  },
+  render() {
+    const r = this.res, c = App.cfg;
+    $('#loadHead').innerHTML = `<tr><th>Filas</th>${WKS.map(w => `<th>${w} workers</th>`).join('')}<th>Speedup ${WKS[0]}→${WKS[WKS.length - 1]}</th></tr>`;
+    $('#loadBody').innerHTML = ROWS.map((rows, i) => {
+      const row = r.grid[i], best = Math.min(...row);
+      return `<tr><td>${human(rows)}</td>${row.map(t => `<td class="${t === best ? 'best' : t > 600 ? 'slow' : ''}">${secs(t)}</td>`).join('')}<td>${fmt(row[0] / row[row.length - 1], 2)}×</td></tr>`;
+    }).join('');
+    const maxJ = Math.max(...r.jobs.map(j => j[1]));
+    $('#jobBars').innerHTML = r.jobs.map(([j, t]) => `<div class="bar"><span>${j} job${j > 1 ? 's' : ''}</span><div class="t"><i style="width:${t / maxJ * 100}%"></i></div><b>${secs(t)}</b></div>`).join('');
+    const maxC = Math.max(...r.cache.map(x => x[1]));
+    $('#cacheBars').innerHTML = r.cache.map(([l, t]) => `<div class="bar"><span>${l}</span><div class="t"><i style="width:${t / maxC * 100}%"></i></div><b>${secs(t)}</b></div>`).join('');
+    // insight
+    const small = r.grid[0], big = r.grid[r.grid.length - 1];
+    const spS = small[0] / small[small.length - 1], spB = big[0] / big[big.length - 1];
+    const cacheGain = r.cache[1][1] / r.cache[0][1];
+    $('#loadInsight').innerHTML = `Con <b>${human(ROWS[0])} filas</b>, pasar de ${WKS[0]} a ${WKS[WKS.length - 1]} workers solo acelera <b>${fmt(spS, 2)}×</b>: el tiempo lo dominan costos fijos (programar tareas, treeAggregate, broadcast). Con <b>${human(ROWS[ROWS.length - 1])} filas</b> el speedup sube a <b>${fmt(spB, 2)}×</b>, porque ahí domina el cálculo del gradiente, que sí se reparte${spB > WKS[WKS.length - 1] / WKS[0] ? ` (y es mayor que ${WKS[WKS.length - 1] / WKS[0]}× porque con más workers el dataset por fin cabe en memoria y deja de releerse del disco en cada iteración)` : ''}. `
+      + `Con ${r.jobs[r.jobs.length - 1][0]} jobs a la vez el entrenamiento tarda ${fmt(r.jobs[r.jobs.length - 1][1] / r.jobs[0][1], 1)}× más: comparten los mismos cores y el mismo disco. `
+      + `Quitar <b>cache()</b> lo hace ${fmt(cacheGain, 1)}× más lento con ${human(c.rows)} filas, porque cada una de las ${r.iters} iteraciones vuelve a leer el disco.`;
+    this.draw();
+  },
+  draw() {
+    if (!this.res) return;
+    const palette = ['--c0', '--violet', '--green', '--accent'];
+    const series = WKS.map((w, j) => ({ pts: ROWS.map((r, i) => [r, this.res.grid[i][j]]), color: css(palette[j]), dots: true }));
+    lineChart($('#loadChart'), series, { logx: true, xmin: ROWS[0], xmax: ROWS[ROWS.length - 1], ymin: 0, xticks: ROWS.map(r => [r, human(r)]), yfmt: v => v >= 120 ? fmt(v / 60, 0) + 'm' : fmt(v, 0) + 's' });
+    $('#loadLegend').innerHTML = WKS.map((w, j) => `<span><i style="background:var(${palette[j]})"></i>${w} workers</span>`).join('');
+  }
+};
+
+/* ================= Arranque ================= */
+function setTheme(t) { document.documentElement.dataset.theme = t; $('#themeBtn').textContent = t === 'dark' ? '☀' : '☾'; }
+(function boot() {
+  let t = Store.get('theme', null);
+  if (t !== 'dark' && t !== 'light') t = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  setTheme(t);
+  UI.init();
+  Sim.prepare();
+  drawSigmoid();
+  Load.run(true);
+  log('Simulador listo. Configura y pulsa ENTRENAR.', 'b');
+})();
+</script>
+</body>
+</html>
