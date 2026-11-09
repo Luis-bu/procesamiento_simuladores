@@ -6,6 +6,8 @@ Dos simuladores interactivos hechos en un solo archivo HTML cada uno (HTML, CSS 
 
 ## Simulador de clúster Apache Spark
 
+`Bueno_SimuladorSpark.html`
+
 Muestra cómo un clúster de Spark reparte el trabajo entre workers y executors.
 
 - Scheduler FAIR con localidad de datos
@@ -15,6 +17,8 @@ Muestra cómo un clúster de Spark reparte el trabajo entre workers y executors.
 - Benchmark con 3, 6 y 10 workers para ver por qué escalar no es lineal
 
 ## Simulador MLlib · Clasificación
+
+`Bueno_SimuladorMLlib.html`
 
 Simula un `LogisticRegression` de Spark MLlib entrenado sobre el clúster.
 

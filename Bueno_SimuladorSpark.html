@@ -1,0 +1,2192 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulador Visual de Apache Spark · PUJ</title>
+<style>
+/* =========================================================
+   TEMA
+   ========================================================= */
+:root{
+  --bg:#eef2f7; --panel:#ffffff; --panel-2:#f6f8fb; --panel-3:#e9eef5;
+  --border:#dbe2ec; --border-strong:#c3cedd;
+  --text:#122033; --muted:#55667e; --faint:#8695aa;
+  --accent:#e0601f; --accent-soft:rgba(224,96,31,.12);
+  --blue:#1d5fa8; --blue-soft:rgba(29,95,168,.10);
+  --green:#23895c; --green-soft:rgba(35,137,92,.12);
+  --red:#c23b33; --red-soft:rgba(194,59,51,.12);
+  --amber:#b7801a; --amber-soft:rgba(183,128,26,.14);
+  --violet:#5b4fc4; --violet-soft:rgba(91,79,196,.12);
+  --rose:#b5476a; --slate:#64748b; --puj:#1a4b8c;
+  --grid:rgba(18,32,51,.08);
+  --shadow:0 1px 2px rgba(16,30,54,.06),0 4px 14px rgba(16,30,54,.05);
+  --radius:12px;
+  --mono:ui-monospace,"SF Mono","Cascadia Code",Consolas,"Liberation Mono",Menlo,monospace;
+  --sans:"Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;
+  color-scheme:light;
+}
+:root[data-theme="dark"]{
+  --bg:#0b111b; --panel:#121a27; --panel-2:#162031; --panel-3:#1d293d;
+  --border:#223047; --border-strong:#31445f;
+  --text:#e4ebf5; --muted:#97a7bd; --faint:#66788f;
+  --accent:#f07a3c; --accent-soft:rgba(240,122,60,.15);
+  --blue:#5b9be0; --blue-soft:rgba(91,155,224,.14);
+  --green:#3dbb84; --green-soft:rgba(61,187,132,.15);
+  --red:#e8645b; --red-soft:rgba(232,100,91,.16);
+  --amber:#e3b04f; --amber-soft:rgba(227,176,79,.15);
+  --violet:#9187ec; --violet-soft:rgba(145,135,236,.15);
+  --rose:#df7c9c; --slate:#8796ab; --puj:#6ea8ee;
+  --grid:rgba(228,235,245,.08);
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.22);
+  color-scheme:dark;
+}
+
+/* =========================================================
+   BASE
+   ========================================================= */
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);font:14px/1.45 var(--sans);-webkit-font-smoothing:antialiased;transition:background-color .25s,color .25s}
+button,select,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.muted{color:var(--muted)}
+.small{font-size:12px}
+.mono{font-family:var(--mono)}
+
+/* =========================================================
+   MEMBRETE
+   ========================================================= */
+.letterhead{position:relative;overflow:hidden;background:
+  radial-gradient(900px 260px at 0% 0%,var(--blue-soft),transparent 70%),
+  radial-gradient(700px 240px at 100% 100%,var(--accent-soft),transparent 70%),var(--panel);
+  border-bottom:1px solid var(--border)}
+.letterhead::before{content:"";position:absolute;left:0;right:0;top:0;height:5px;background:linear-gradient(90deg,var(--puj) 0 70%,var(--accent) 70% 100%)}
+.letterhead::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.5;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:28px 28px;-webkit-mask-image:linear-gradient(90deg,transparent 35%,#000 100%);mask-image:linear-gradient(90deg,transparent 35%,#000 100%)}
+.lh{position:relative;z-index:1;max-width:1480px;margin:0 auto;padding:28px 24px 22px;display:flex;flex-wrap:wrap;align-items:center;gap:22px 28px}
+.lh-mark{font:900 64px/0.9 Georgia,"Times New Roman",serif;letter-spacing:.04em;color:var(--puj);flex:none;padding-right:28px;border-right:2px solid var(--border);text-shadow:0 2px 0 var(--blue-soft)}
+.lh-id{display:flex;flex-direction:column;gap:5px;min-width:0;flex:1}
+.lh-uni{font-size:12.5px;font-weight:800;letter-spacing:.22em;color:var(--puj)}
+.lh-title{font-size:30px;font-weight:800;letter-spacing:.01em;line-height:1.1}
+.lh-title span{color:var(--accent)}
+.lh-sub{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:8px}
+.lh-sub::before{content:"";width:28px;height:3px;border-radius:2px;background:var(--accent)}
+.lh-meta{order:3;width:100%;display:grid;grid-template-columns:1.3fr 1fr .7fr;gap:12px}
+.lh-meta div{display:flex;flex-direction:column;line-height:1.3;padding:10px 16px;min-width:0;border:1px solid var(--border);border-left:3px solid var(--puj);border-radius:9px;background:var(--panel);box-shadow:var(--shadow)}
+.lh-meta span{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);font-weight:700}
+.lh-meta b{font-size:15px;font-weight:700}
+.lh-actions{display:flex;gap:8px;align-items:center;align-self:flex-start}
+.lh-meta div:last-child b{color:var(--accent)}
+.icon-btn{width:36px;height:36px;border-radius:9px;border:1px solid var(--border);background:var(--panel-2);display:grid;place-items:center;cursor:pointer;font-size:16px;transition:background .15s,border-color .15s}
+.icon-btn:hover{border-color:var(--border-strong);background:var(--panel-3)}
+@media (max-width:760px){.lh-meta{grid-template-columns:1fr 1fr}}
+@media (max-width:640px){.lh{gap:16px;padding:20px 14px}.lh-mark{font-size:44px;padding-right:16px}.lh-title{font-size:20px}}
+
+/* =========================================================
+   LAYOUT GENERAL
+   ========================================================= */
+.wrap{max-width:1480px;margin:0 auto;padding:16px 24px 48px;display:flex;flex-direction:column;gap:16px}
+@media (max-width:700px){.wrap{padding:12px 12px 40px}}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+.sec-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px 0;flex-wrap:wrap}
+.sec-title{margin:0;font-size:11.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:8px}
+.sec-title::before{content:"";width:8px;height:8px;border-radius:2px;background:var(--accent)}
+.sec-body{padding:14px 16px 16px}
+.mini-title{margin:14px 0 8px;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+
+/* =========================================================
+   BARRA SUPERIOR
+   ========================================================= */
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 16px;flex-wrap:wrap}
+.tb-left{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.tb-left h1{margin:0;font-size:19px;font-weight:700;letter-spacing:-.01em;display:flex;align-items:center;gap:9px}
+.tb-left h1 svg{color:var(--accent)}
+.status{display:inline-flex;align-items:center;gap:7px;padding:4px 11px;border-radius:999px;font:700 11px var(--mono);letter-spacing:.08em}
+.status i{width:8px;height:8px;border-radius:50%;background:currentColor}
+.status.online{color:var(--blue);background:var(--blue-soft)}
+.status.running{color:var(--green);background:var(--green-soft)}
+.status.running i{animation:pulse 1.1s infinite}
+.status.paused{color:var(--amber);background:var(--amber-soft)}
+.status.completed{color:var(--violet);background:var(--violet-soft)}
+.clock{font:600 12.5px var(--mono);color:var(--muted);padding:4px 10px;border:1px solid var(--border);border-radius:8px;background:var(--panel-2)}
+.tb-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 13px;border-radius:9px;border:1px solid var(--border);background:var(--panel-2);font-weight:650;font-size:12px;letter-spacing:.03em;cursor:pointer;transition:background .15s,border-color .15s,filter .15s;white-space:nowrap}
+.btn:hover{border-color:var(--border-strong);background:var(--panel-3)}
+.btn:active{transform:translateY(1px)}
+.btn:disabled{opacity:.42;cursor:not-allowed}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:hover{filter:brightness(1.08);background:var(--accent)}
+.btn.blue{background:var(--blue);border-color:var(--blue);color:#fff}
+.btn.blue:hover{filter:brightness(1.08);background:var(--blue)}
+.btn.sm{height:30px;font-size:11.5px;padding:0 10px}
+.btn.attn{animation:attn 1.6s ease-in-out infinite}
+.speed{display:flex;align-items:center;gap:8px;padding:0 10px;height:36px;border:1px solid var(--border);border-radius:9px;background:var(--panel-2);font-size:11.5px;font-weight:650;letter-spacing:.04em}
+.speed input{width:96px;accent-color:var(--accent)}
+.speed b{font-family:var(--mono);min-width:32px;text-align:right}
+
+/* Pipeline */
+.pipeline{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:10px 14px;font:700 10.5px var(--mono);letter-spacing:.08em}
+.pipe-step{padding:5px 10px;border-radius:7px;border:1px solid var(--border);background:var(--panel-2);color:var(--faint);transition:all .35s}
+.pipe-step.on{color:var(--text);border-color:var(--accent);background:var(--accent-soft)}
+.pipe-arrow{color:var(--faint)}
+.pipe-note{margin-left:auto;font:500 11.5px var(--sans);color:var(--faint)}
+
+/* KPIs */
+.kpis{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:12px}
+@media (max-width:1320px){.kpis{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media (max-width:620px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi{padding:12px 14px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.kpi .lbl{font-size:10.5px;font-weight:700;letter-spacing:.12em;color:var(--muted);text-transform:uppercase}
+.kpi .val{font:650 23px/1.2 var(--mono);letter-spacing:-.02em;white-space:nowrap}
+.kpi .val small{font-size:12px;color:var(--muted);font-weight:500;margin-left:2px}
+.kpi .sub{font-size:11.5px;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi .mini{height:4px;border-radius:3px;background:var(--panel-3);overflow:hidden;margin-top:5px}
+.kpi .mini i{display:block;height:100%;width:0;background:var(--blue);transition:width .4s,background-color .3s}
+
+.layout{display:grid;grid-template-columns:300px minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:1100px){.layout{grid-template-columns:1fr}}
+
+/* =========================================================
+   CONFIGURACIÓN
+   ========================================================= */
+.config .sec-body{display:flex;flex-direction:column;gap:9px}
+.field{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.field label{font-size:12.5px;font-weight:650;line-height:1.2}
+.field .hint{display:block;font-size:10.5px;color:var(--faint);font-weight:500}
+.stepper{display:flex;align-items:center;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--panel-2);flex:none}
+.stepper button{width:30px;height:30px;border:0;background:transparent;cursor:pointer;font-size:16px;color:var(--muted)}
+.stepper button:hover{background:var(--panel-3);color:var(--text)}
+.stepper .num{display:flex;align-items:center;justify-content:center;gap:3px;min-width:86px;height:30px;padding:0 6px;border-left:1px solid var(--border);border-right:1px solid var(--border);cursor:text}
+.stepper .num:focus-within{background:var(--panel);box-shadow:inset 0 0 0 2px var(--blue)}
+.num input{width:40px;border:0;background:transparent;padding:0;text-align:right;font:650 12.5px var(--mono);color:inherit;-moz-appearance:textfield;appearance:textfield}
+.num input:focus{outline:none}
+.num input::-webkit-outer-spin-button,.num input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.num.nounit input{width:60px;text-align:center}
+.num.nounit em{display:none}
+.num em{font:500 11px var(--mono);font-style:normal;color:var(--muted);white-space:nowrap}
+.stepper.changed .num input{color:var(--accent)}
+.num.clamped{animation:clampFlash .7s}
+@keyframes clampFlash{0%,100%{background:transparent}30%{background:var(--amber-soft)}}
+.range-field .num{border:1px solid var(--border);border-radius:7px;background:var(--panel-2);height:28px;padding:0 8px;display:flex;align-items:center;gap:3px}
+.range-field .num input{width:44px}
+.range-field .num:focus-within{box-shadow:0 0 0 2px var(--blue)}
+.range-field.changed .num input{color:var(--accent)}
+.stepper.changed{border-color:var(--accent)}
+.stepper.changed output{color:var(--accent)}
+.range-field{display:flex;flex-direction:column;gap:6px}
+.range-field .row{display:flex;justify-content:space-between;align-items:baseline}
+.range-field input{width:100%;accent-color:var(--accent)}
+.range-field output{font:650 12px var(--mono)}
+.range-field.changed output{color:var(--accent)}
+.cfg-summary{font:11.5px var(--mono);color:var(--muted);background:var(--panel-2);border:1px solid var(--border);border-radius:8px;padding:7px 10px}
+.apply{width:100%;justify-content:center;height:40px}
+.divider{height:1px;background:var(--border);margin:6px 0 2px}
+.scenarios{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.scn{text-align:left;padding:9px 10px;border-radius:9px;border:1px solid var(--border);background:var(--panel-2);cursor:pointer;transition:border-color .15s,background .15s}
+.scn b{display:block;font:700 11px var(--mono);letter-spacing:.08em}
+.scn span{font-size:10.5px;color:var(--faint)}
+.scn:hover{border-color:var(--border-strong)}
+.scn.active{border-color:var(--accent);background:var(--accent-soft)}
+.scn[data-s="light"] b{color:var(--green)}
+.scn[data-s="normal"] b{color:var(--blue)}
+.scn[data-s="high"] b{color:var(--amber)}
+.scn[data-s="stress"] b{color:var(--red)}
+.note{font-size:11.5px;color:var(--muted);background:var(--panel-2);border:1px dashed var(--border-strong);border-radius:8px;padding:8px 10px;line-height:1.5}
+
+/* =========================================================
+   ARQUITECTURA
+   ========================================================= */
+.arch{position:relative}
+.arch-legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--muted)}
+.arch-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.arch-top{display:grid;grid-template-columns:minmax(0,1fr) 30px minmax(0,1fr) 30px minmax(0,1.05fr) 22px minmax(0,1fr);padding:14px 16px 0}
+@media (max-width:1280px){.arch-top{grid-template-columns:1fr 1fr;gap:10px}.arch-top .conn,.arch-top .gap{display:none}}
+@media (max-width:560px){.arch-top{grid-template-columns:1fr}}
+.node{border:1px solid var(--border);border-radius:10px;background:var(--panel-2);padding:11px 12px 10px;position:relative;min-width:0}
+.node::before{content:"";position:absolute;left:-1px;right:-1px;top:-1px;height:3px;border-radius:10px 10px 0 0;background:var(--c)}
+.node h3{margin:0 0 2px;font:700 11.5px var(--sans);letter-spacing:.12em;text-transform:uppercase;display:flex;align-items:center;gap:7px}
+.node h3 svg{color:var(--c);flex:none}
+.node .sub{font-size:10.5px;color:var(--faint);margin:0 0 8px}
+.kv{display:grid;grid-template-columns:1fr auto;gap:3px 10px;font-size:11.5px}
+.kv span{color:var(--muted)}
+.kv b{font:650 11.5px var(--mono);text-align:right;white-space:nowrap}
+.node.users{--c:var(--violet)}
+.node.driver{--c:var(--blue)}
+.node.cm{--c:var(--rose)}
+.node.hdfs{--c:var(--slate)}
+.node.pulse{animation:nodePulse .6s ease}
+.conn{align-self:center;height:2px;position:relative;margin:0 5px;background-image:repeating-linear-gradient(90deg,var(--border-strong) 0 6px,transparent 6px 11px);background-size:22px 2px}
+.conn::after{content:"";position:absolute;right:-3px;top:-4px;border-style:solid;border-width:5px 0 5px 7px;border-color:transparent transparent transparent var(--border-strong)}
+.conn.bi::before{content:"";position:absolute;left:-3px;top:-4px;border-style:solid;border-width:5px 7px 5px 0;border-color:transparent var(--border-strong) transparent transparent}
+.arch.live .conn{background-image:repeating-linear-gradient(90deg,var(--accent) 0 6px,transparent 6px 11px);animation:flow .7s linear infinite}
+.arch.live .conn::after{border-left-color:var(--accent)}
+.arch.live .conn.bi::before{border-right-color:var(--accent)}
+.gap{align-self:center;text-align:center;color:var(--faint);font-size:13px}
+.uchips{display:flex;flex-wrap:wrap;gap:4px;max-height:82px;overflow:auto;margin-top:8px}
+.uchip{font:700 9.5px var(--mono);padding:3px 5px;border-radius:5px;border:1px solid var(--border);background:var(--panel);color:var(--faint);transition:all .25s}
+.uchip.RUNNING{color:var(--violet);border-color:var(--violet);background:var(--violet-soft)}
+.uchip.THINKING,.uchip.READY{color:var(--muted)}
+.uchip.DONE{opacity:.45}
+.uchip.flash{animation:chipFlash .7s}
+.bus{margin:14px 16px 12px;display:flex;align-items:center;gap:10px;color:var(--faint);font:700 10.5px var(--mono);letter-spacing:.1em}
+.bus::before,.bus::after{content:"";flex:1;height:2px;background-image:repeating-linear-gradient(90deg,var(--border-strong) 0 6px,transparent 6px 11px);background-size:22px 2px}
+.arch.live .bus::before,.arch.live .bus::after{background-image:repeating-linear-gradient(90deg,var(--accent) 0 6px,transparent 6px 11px);animation:flow .7s linear infinite}
+.bus span{padding:4px 11px;border:1px solid var(--border);border-radius:999px;background:var(--panel-2);white-space:nowrap}
+
+/* Workers */
+.workers{display:grid;grid-template-columns:repeat(var(--cols,3),minmax(0,1fr));gap:12px;padding:0 16px 16px}
+.worker{border:1px solid var(--border);border-radius:10px;background:var(--panel-2);padding:11px 11px 9px;cursor:pointer;position:relative;transition:border-color .25s,box-shadow .25s,opacity .3s;min-width:0}
+.worker::before{content:"";position:absolute;left:-1px;right:-1px;top:-1px;height:3px;border-radius:10px 10px 0 0;background:var(--accent);opacity:.85}
+.worker:hover{border-color:var(--border-strong);box-shadow:var(--shadow)}
+.worker.st-overloaded{border-color:var(--red);box-shadow:0 0 0 3px var(--red-soft)}
+.worker.st-overloaded::before{background:var(--red)}
+.worker.st-offline{opacity:.55;background-image:repeating-linear-gradient(135deg,transparent 0 9px,var(--grid) 9px 18px)}
+.worker.st-offline::before{background:var(--faint)}
+.worker.recv{animation:recv .45s ease}
+.w-head{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:8px}
+.w-name{font:700 11.5px var(--mono);letter-spacing:.06em;display:flex;align-items:center;gap:6px;white-space:nowrap}
+.w-name svg{color:var(--accent)}
+.pill{font:700 9px var(--mono);letter-spacing:.08em;padding:3px 7px;border-radius:999px;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.pill.ONLINE{color:var(--blue);background:var(--blue-soft)}
+.pill.IDLE{color:var(--muted);background:var(--panel-3)}
+.pill.BUSY{color:var(--green);background:var(--green-soft)}
+.pill.OVERLOADED{color:var(--red);background:var(--red-soft)}
+.pill.OVERLOADED::before{animation:pulse .8s infinite}
+.pill.OFFLINE{color:var(--faint);background:var(--panel-3)}
+.exec{border:1px solid var(--border);border-radius:8px;background:var(--panel);padding:8px 9px}
+.exec-head{display:flex;justify-content:space-between;align-items:center;gap:8px;font:700 9.5px var(--mono);letter-spacing:.1em;color:var(--muted);margin-bottom:6px}
+.cores{display:flex;flex-wrap:wrap;gap:2px;justify-content:flex-end;max-width:62%}
+.cores i{width:7px;height:7px;border-radius:2px;background:var(--panel-3);border:1px solid var(--border);transition:background-color .2s}
+.cores i.on{background:var(--accent);border-color:var(--accent)}
+.cores i.io{background:var(--amber);border-color:var(--amber)}
+.meter{display:grid;grid-template-columns:40px minmax(0,1fr) auto;align-items:center;gap:7px;margin:4px 0;border-radius:5px}
+.meter span{font:700 9px var(--mono);letter-spacing:.08em;color:var(--muted)}
+.meter .bar{height:6px;border-radius:4px;background:var(--panel-3);overflow:hidden}
+.meter .bar i{display:block;height:100%;width:0;border-radius:4px;transition:width .35s ease,background-color .3s}
+.meter.cpu .bar i{background:var(--blue)}
+.meter.mem .bar i{background:var(--violet)}
+.meter.cache .bar i{background:var(--green)}
+.meter .bar i.hot{background:var(--red)}
+.meter b{font:650 10px var(--mono);min-width:30px;text-align:right;white-space:nowrap}
+.meter.flash{animation:hitFlash .6s}
+.tasks{display:flex;flex-direction:column;gap:3px;margin-top:7px}
+.tchip{display:grid;grid-template-columns:auto auto minmax(0,1fr);align-items:center;gap:6px;font:650 9.5px var(--mono);padding:3px 6px 4px;border-radius:5px;background:var(--panel-2);border-left:3px solid var(--faint);position:relative;overflow:hidden}
+.tchip .tj{color:var(--faint);font-weight:600}
+.tchip em{font-style:normal;color:var(--muted);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tchip .pg{position:absolute;left:0;bottom:0;height:2px;background:var(--accent);transition:width .3s linear}
+.tchip.run{border-left-color:var(--blue)}
+.tchip.read{border-left-color:var(--amber)}
+.tchip.read .pg{background:var(--amber)}
+.tchip.hit{border-left-color:var(--green)}
+.tchip.hit .pg{background:var(--green)}
+.tchip.wait{opacity:.75}
+.tchip.done{border-left-color:var(--green)}
+.tchip.done em{color:var(--green)}
+.tchip.fail{border-left-color:var(--red)}
+.tchip.fail em{color:var(--red)}
+.tmore{font:600 9.5px var(--mono);color:var(--faint);text-align:center;padding-top:1px}
+.tempty{font-size:10.5px;color:var(--faint);text-align:center;padding:5px 0;border:1px dashed var(--border);border-radius:5px}
+.w-foot{display:flex;align-items:center;justify-content:space-between;margin-top:8px;gap:6px}
+.hdfs-tag{display:inline-flex;align-items:center;gap:5px;padding:3px 7px;border-radius:6px;border:1px solid var(--border);background:var(--panel);font:650 9.5px var(--mono);color:var(--muted);white-space:nowrap}
+.hdfs-tag.flash{animation:missFlash .6s}
+.w-tp{font:650 9.5px var(--mono);color:var(--muted);white-space:nowrap}
+.io-flag{position:absolute;top:36px;right:10px;font:700 8.5px var(--mono);letter-spacing:.06em;padding:2px 5px;border-radius:4px;opacity:0;pointer-events:none;color:#fff}
+.io-flag.hit{background:var(--green);animation:flag .9s}
+.io-flag.miss{background:var(--amber);animation:flag .9s}
+.workers.compact .worker{padding:9px 9px 8px}
+.workers.compact .exec{padding:7px 7px}
+.workers.compact .w-tp{display:none}
+.fly-layer{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:4;border-radius:var(--radius)}
+.fly{position:absolute;left:0;top:0;will-change:transform,opacity}
+.fly span{display:block;transform:translate(-50%,-50%);padding:2px 7px;border-radius:5px;background:var(--accent);color:#fff;font:700 10px var(--mono);box-shadow:0 3px 10px rgba(0,0,0,.25);white-space:nowrap}
+
+/* =========================================================
+   TABLAS / LOG
+   ========================================================= */
+.two{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:16px}
+@media (max-width:1100px){.two{grid-template-columns:1fr}}
+.table-wrap{max-height:360px;overflow:auto;border:1px solid var(--border);border-radius:9px}
+.table-wrap.short{max-height:220px}
+table{width:100%;border-collapse:collapse}
+th{position:sticky;top:0;background:var(--panel-2);text-align:left;font:700 9.5px var(--mono);letter-spacing:.1em;color:var(--muted);padding:8px 10px;border-bottom:1px solid var(--border);z-index:1;white-space:nowrap}
+td{padding:6px 10px;border-bottom:1px solid var(--border);font:11.5px var(--mono);white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+tr.cur td{background:var(--accent-soft)}
+.badge{font:700 9px var(--mono);letter-spacing:.06em;padding:2px 7px;border-radius:5px}
+.badge.QUEUED{color:var(--muted);background:var(--panel-3)}
+.badge.RUNNING{color:var(--blue);background:var(--blue-soft)}
+.badge.COMPLETED{color:var(--green);background:var(--green-soft)}
+.badge.FAILED{color:var(--red);background:var(--red-soft)}
+.jprog{display:flex;align-items:center;gap:7px}
+.jprog .bar{width:56px;height:5px;border-radius:3px;background:var(--panel-3);overflow:hidden}
+.jprog .bar i{display:block;height:100%;background:var(--green)}
+.empty{padding:22px;text-align:center;color:var(--faint);font-size:12px}
+select{height:30px;border-radius:7px;border:1px solid var(--border);background:var(--panel-2);padding:0 8px;font-size:12px}
+.log{height:360px;overflow:auto;border:1px solid var(--border);border-radius:9px;background:var(--panel-2)}
+.log-row{display:grid;grid-template-columns:60px 58px minmax(0,1fr);gap:8px;padding:5px 10px;border-bottom:1px solid var(--border);font:11.5px/1.4 var(--mono);animation:fadeIn .3s}
+.log-row time{color:var(--faint)}
+.log-row .t{font-weight:700;font-size:9.5px;letter-spacing:.06em;align-self:center}
+.log-row .m{overflow-wrap:anywhere}
+.t.JOB{color:var(--violet)} .t.STAGE{color:var(--rose)} .t.TASK{color:var(--blue)} .t.CACHE{color:var(--green)}
+.t.HDFS{color:var(--amber)} .t.WORKER{color:var(--slate)} .t.WARN{color:var(--amber)} .t.ERROR{color:var(--red)} .t.SYS{color:var(--muted)}
+.log-row.WARN{background:var(--amber-soft)} .log-row.ERROR{background:var(--red-soft)}
+
+/* =========================================================
+   GRÁFICAS
+   ========================================================= */
+.charts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.chart{border:1px solid var(--border);border-radius:10px;background:var(--panel-2);padding:10px 12px 8px;min-width:0}
+.chart.wide{grid-column:span 2}
+.chart-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:6px}
+.chart-head h4{margin:0;font-size:11.5px;font-weight:700;letter-spacing:.03em}
+.chart-head b{font:650 12.5px var(--mono);white-space:nowrap}
+.chart canvas{width:100%;height:150px;display:block}
+.legend{display:flex;gap:12px;font-size:10.5px;color:var(--muted);margin-top:4px;flex-wrap:wrap}
+.legend i{display:inline-block;width:12px;height:3px;border-radius:2px;margin-right:5px;vertical-align:middle}
+@media (max-width:1100px){.charts{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:640px){.charts{grid-template-columns:1fr}.chart.wide{grid-column:auto}}
+
+/* =========================================================
+   RENDIMIENTO
+   ========================================================= */
+.perf-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:16px}
+@media (max-width:1100px){.perf-grid{grid-template-columns:1fr}}
+.stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.stat{padding:10px 12px;border:1px solid var(--border);border-radius:9px;background:var(--panel-2);min-width:0}
+.stat span{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.stat b{display:block;font:650 19px/1.25 var(--mono);margin-top:2px;white-space:nowrap}
+.stat small{color:var(--faint);font-size:11px}
+.bench{border:1px solid var(--border);border-radius:10px;padding:14px;background:var(--panel-2);min-width:0}
+.bench .mini-title{margin-top:0}
+.bench-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}
+.bench-bars{display:flex;flex-direction:column;gap:8px;margin:14px 0}
+.bbar{display:grid;grid-template-columns:92px minmax(0,1fr) 64px;gap:10px;align-items:center;font:650 11.5px var(--mono)}
+.bbar .track{height:16px;background:var(--panel-3);border-radius:4px;overflow:hidden}
+.bbar .track i{display:block;height:100%;background:linear-gradient(90deg,var(--blue),var(--accent));border-radius:4px;transition:width .7s ease}
+.bbar.cur span{color:var(--accent)}
+.bbar b{text-align:right}
+.insight{font-size:12.5px;line-height:1.6;border-left:3px solid var(--accent);padding:8px 12px;background:var(--panel);border-radius:0 8px 8px 0;margin-top:12px}
+.insight strong{font-weight:650}
+
+/* =========================================================
+   MODALES
+   ========================================================= */
+.backdrop{position:fixed;inset:0;background:rgba(8,14,24,.55);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:16px;z-index:50;animation:fadeIn .2s}
+.backdrop[hidden]{display:none}
+.modal{width:min(580px,100%);max-height:calc(100vh - 32px);overflow:auto;background:var(--panel);border:1px solid var(--border);border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.35);animation:pop .25s ease}
+.modal > header{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:15px 18px;border-bottom:1px solid var(--border)}
+.modal > header h2{margin:0;font:700 15px var(--mono);letter-spacing:.06em;display:flex;gap:10px;align-items:center}
+.modal .body{padding:16px 18px}
+.modal > footer{padding:12px 18px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.mgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media (max-width:520px){.mgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.hist{max-height:210px;overflow:auto;border:1px solid var(--border);border-radius:8px}
+.hist-row{display:grid;grid-template-columns:62px 52px minmax(0,1fr) auto;gap:8px;padding:5px 10px;font:11px var(--mono);border-bottom:1px solid var(--border)}
+.hist-row:last-child{border-bottom:0}
+.ok{color:var(--green)} .bad{color:var(--red)} .warn{color:var(--amber)}
+.done-hero{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.check{width:42px;height:42px;border-radius:50%;background:var(--green-soft);color:var(--green);display:grid;place-items:center;font-size:21px;flex:none}
+.foot{font-size:11.5px;color:var(--faint);text-align:center;padding-top:4px}
+
+/* =========================================================
+   ANIMACIONES
+   ========================================================= */
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+@keyframes flow{to{background-position:22px 0}}
+@keyframes nodePulse{0%{box-shadow:0 0 0 0 var(--accent-soft)}40%{box-shadow:0 0 0 6px var(--accent-soft)}100%{box-shadow:0 0 0 0 transparent}}
+@keyframes recv{0%{box-shadow:0 0 0 0 var(--accent-soft)}40%{box-shadow:0 0 0 5px var(--accent-soft)}100%{box-shadow:0 0 0 0 transparent}}
+@keyframes chipFlash{0%{transform:scale(1)}40%{transform:scale(1.18)}100%{transform:scale(1)}}
+@keyframes hitFlash{0%{background:transparent}30%{background:var(--green-soft)}100%{background:transparent}}
+@keyframes missFlash{0%{border-color:var(--border)}30%{border-color:var(--amber);background:var(--amber-soft);color:var(--amber)}100%{border-color:var(--border)}}
+@keyframes flag{0%{opacity:0;transform:translateY(4px)}20%{opacity:1;transform:none}75%{opacity:1}100%{opacity:0}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes pop{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
+@keyframes attn{0%,100%{box-shadow:0 0 0 0 var(--accent-soft)}50%{box-shadow:0 0 0 5px var(--accent-soft)}}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+
+<!-- =========================================================
+     MEMBRETE INSTITUCIONAL
+     ========================================================= -->
+<header class="letterhead">
+  <div class="lh">
+    <div class="lh-mark" aria-label="PUJ">PUJ</div>
+    <div class="lh-id">
+      <span class="lh-uni">PONTIFICIA UNIVERSIDAD JAVERIANA</span>
+      <span class="lh-title">SIMULADOR VISUAL DE <span>APACHE SPARK</span></span>
+      <span class="lh-sub">Procesamiento distribuido en clúster: Driver · Cluster Manager · Executors · HDFS</span>
+    </div>
+    <div class="lh-meta">
+      <div><span>Materia</span><b>Procesamiento de Datos a Gran Escala</b></div>
+      <div><span>Ingeniero</span><b>Luis Ernesto Bueno Solano</b></div>
+      <div><span>Período académico</span><b>2026-30</b></div>
+    </div>
+    <div class="lh-actions">
+      <button class="icon-btn" id="themeBtn" type="button" title="Cambiar tema claro / oscuro" aria-label="Cambiar tema claro u oscuro">☾</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- Barra de control -->
+  <section class="card topbar" aria-label="Controles de simulación">
+    <div class="tb-left">
+      <h1>
+        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 1.5l2.3 6.6 6.9.4-5.4 4.3 1.9 6.7L12 15.6l-5.7 3.9 1.9-6.7L2.8 8.5l6.9-.4z"/></svg>
+        Apache Spark Cluster Simulator
+      </h1>
+      <span id="statusPill" class="status online" role="status" aria-live="polite"><i></i><span>ONLINE</span></span>
+      <span class="clock" id="clock" title="Tiempo simulado transcurrido">T+ 00:00.0</span>
+    </div>
+    <div class="tb-right">
+      <button class="btn primary" id="btnStart" type="button" title="Iniciar o reanudar la simulación">▶ START SIMULATION</button>
+      <button class="btn" id="btnPause" type="button" title="Pausar la simulación">⏸ PAUSE</button>
+      <button class="btn" id="btnReset" type="button" title="Reiniciar el clúster con la configuración aplicada">↻ RESET</button>
+      <button class="btn" id="btnLoad" type="button" title="Enviar jobs adicionales al clúster">⚡ GENERATE LOAD</button>
+      <button class="btn" id="btnClear" type="button" title="Vaciar el registro de eventos">🗑 CLEAR LOGS</button>
+      <div class="speed" title="Velocidad de la simulación">
+        <label for="speed">SPEED</label>
+        <input type="range" id="speed" min="0" max="3" step="1" value="1" aria-valuetext="1x">
+        <b id="speedVal">1x</b>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pipeline conceptual -->
+  <nav class="card pipeline" aria-label="Flujo de ejecución de Spark">
+    <span class="pipe-step" data-p="user">USER</span><span class="pipe-arrow">→</span>
+    <span class="pipe-step" data-p="driver">DRIVER</span><span class="pipe-arrow">→</span>
+    <span class="pipe-step" data-p="cm">CLUSTER MANAGER</span><span class="pipe-arrow">→</span>
+    <span class="pipe-step" data-p="workers">WORKERS</span><span class="pipe-arrow">→</span>
+    <span class="pipe-step" data-p="exec">EXECUTORS</span><span class="pipe-arrow">→</span>
+    <span class="pipe-step" data-p="tasks">TASKS</span><span class="pipe-arrow">→</span>
+    <span class="pipe-step" data-p="cache">CACHE</span><span class="pipe-arrow">/</span>
+    <span class="pipe-step" data-p="hdfs">RDD · HDFS</span>
+    <span class="pipe-note">Scheduler FAIR · localidad de datos · caché LRU por executor</span>
+  </nav>
+
+  <!-- KPIs globales -->
+  <section class="kpis" aria-label="Métricas globales">
+    <div class="card kpi" title="Workers en línea / totales"><span class="lbl">Worker Nodes</span><span class="val" id="kWorkers">6</span><span class="sub" id="kWorkersSub">—</span></div>
+    <div class="card kpi" title="Usuarios virtuales que envían jobs"><span class="lbl">Users</span><span class="val" id="kUsers">8</span><span class="sub" id="kUsersSub">—</span></div>
+    <div class="card kpi" title="Tasks totales de la carga"><span class="lbl">Tasks</span><span class="val" id="kTasks">0</span><span class="sub" id="kTasksSub">—</span></div>
+    <div class="card kpi" title="Uso de CPU del clúster (núcleos ocupados / disponibles)"><span class="lbl">CPU</span><span class="val" id="kCpu">0%</span><div class="mini"><i id="kCpuBar"></i></div><span class="sub" id="kCpuSub">—</span></div>
+    <div class="card kpi" title="Memoria usada por executors (overhead + caché + tasks)"><span class="lbl">Memory</span><span class="val" id="kMem">0%</span><div class="mini"><i id="kMemBar"></i></div><span class="sub" id="kMemSub">—</span></div>
+    <div class="card kpi" title="Tasks completadas por segundo (ventana de 3 s)"><span class="lbl">Throughput</span><span class="val" id="kThr">0<small>t/s</small></span><span class="sub" id="kThrSub">—</span></div>
+    <div class="card kpi" title="Lecturas de bloques resueltas desde caché"><span class="lbl">Cache Hit</span><span class="val" id="kHit">0%</span><span class="sub" id="kHitSub">—</span></div>
+    <div class="card kpi" title="Tiempo simulado"><span class="lbl">Sim Time</span><span class="val" id="kTime">0.0<small>s</small></span><span class="sub" id="kTimeSub">—</span></div>
+  </section>
+
+  <div class="layout">
+    <!-- Configuración -->
+    <aside class="card config" aria-labelledby="cfgTitle">
+      <div class="sec-head"><h2 class="sec-title" id="cfgTitle">Cluster Configuration</h2></div>
+      <div class="sec-body">
+        <div class="field"><label id="l-workers">Worker Nodes<span class="hint">nodos del clúster</span></label>
+          <div class="stepper" data-key="workers" role="group" aria-labelledby="l-workers"><button type="button" data-d="-1" aria-label="Disminuir Worker Nodes">−</button><label class="num"><input type="number" inputmode="numeric" step="1"><em></em></label><button type="button" data-d="1" aria-label="Aumentar Worker Nodes">+</button></div></div>
+        <div class="field"><label id="l-users">Usuarios<span class="hint">envían jobs en paralelo</span></label>
+          <div class="stepper" data-key="users" role="group" aria-labelledby="l-users"><button type="button" data-d="-1" aria-label="Disminuir usuarios">−</button><label class="num"><input type="number" inputmode="numeric" step="1"><em></em></label><button type="button" data-d="1" aria-label="Aumentar usuarios">+</button></div></div>
+        <div class="field"><label id="l-jobs">Jobs<span class="hint">total de la carga</span></label>
+          <div class="stepper" data-key="jobs" role="group" aria-labelledby="l-jobs"><button type="button" data-d="-1" aria-label="Disminuir jobs">−</button><label class="num"><input type="number" inputmode="numeric" step="1"><em></em></label><button type="button" data-d="1" aria-label="Aumentar jobs">+</button></div></div>
+        <div class="field"><label id="l-tasks">Tasks por Job<span class="hint">particiones en 3 stages</span></label>
+          <div class="stepper" data-key="tasksPerJob" role="group" aria-labelledby="l-tasks"><button type="button" data-d="-1" aria-label="Disminuir tasks por job">−</button><label class="num"><input type="number" inputmode="numeric" step="1"><em></em></label><button type="button" data-d="1" aria-label="Aumentar tasks por job">+</button></div></div>
+        <div class="field"><label id="l-ram">RAM por Worker<span class="hint">memoria del executor</span></label>
+          <div class="stepper" data-key="ramGB" role="group" aria-labelledby="l-ram"><button type="button" data-d="-1" aria-label="Disminuir RAM">−</button><label class="num"><input type="number" inputmode="numeric" step="1"><em></em></label><button type="button" data-d="1" aria-label="Aumentar RAM">+</button></div></div>
+        <div class="field"><label id="l-cpu">CPU por Worker<span class="hint">1 core = 1 slot de task</span></label>
+          <div class="stepper" data-key="cores" role="group" aria-labelledby="l-cpu"><button type="button" data-d="-1" aria-label="Disminuir cores">−</button><label class="num"><input type="number" inputmode="numeric" step="1"><em></em></label><button type="button" data-d="1" aria-label="Aumentar cores">+</button></div></div>
+        <div class="field"><label id="l-cache">Cache<span class="hint">por worker · máx. RAM/2</span></label>
+          <div class="stepper" data-key="cacheGB" role="group" aria-labelledby="l-cache"><button type="button" data-d="-1" aria-label="Disminuir caché">−</button><label class="num"><input type="number" inputmode="numeric" step="1"><em></em></label><button type="button" data-d="1" aria-label="Aumentar caché">+</button></div></div>
+        <div class="range-field" id="datasetField">
+          <div class="row"><label for="dataset" style="font-size:12.5px;font-weight:650">Dataset</label><label class="num" title="Escribe el tamaño en GB"><input type="number" id="datasetNum" inputmode="numeric" min="10" max="1000" step="1" aria-label="Dataset en GB"><em>GB</em></label></div>
+          <input type="range" id="dataset" min="10" max="1000" step="10" aria-label="Dataset (control deslizante)" value="250" aria-describedby="datasetHint">
+          <span class="hint" id="datasetHint" style="font-size:10.5px;color:var(--faint)">Bloques de 512 MB · más datos = menos probabilidad de cache hit</span>
+        </div>
+        <div class="cfg-summary" id="cfgSummary">—</div>
+        <button class="btn primary apply" id="btnApply" type="button" title="Reconstruye el clúster con estos parámetros">APPLY CONFIGURATION</button>
+
+        <div class="divider"></div>
+        <h3 class="mini-title" style="margin:4px 0 2px">Escenarios predefinidos</h3>
+        <div class="scenarios">
+          <button class="scn" type="button" data-s="light" title="2 usuarios, 8 jobs, 64 tasks"><b>LIGHT LOAD</b><span>clúster holgado</span></button>
+          <button class="scn" type="button" data-s="normal" title="8 usuarios, 10 jobs, 120 tasks"><b>NORMAL LOAD</b><span>carga típica</span></button>
+          <button class="scn" type="button" data-s="high" title="14 usuarios, 24 jobs, 384 tasks"><b>HIGH LOAD</b><span>cola sostenida</span></button>
+          <button class="scn" type="button" data-s="stress" title="4 workers, 20 usuarios, 40 jobs, 400 tasks, poca RAM"><b>STRESS TEST</b><span>saturación visible</span></button>
+        </div>
+        <p class="note">Haz clic sobre un Worker para ver su detalle y simular la caída del nodo. Si cambias solo el número de Workers con la simulación en marcha, el clúster escala en caliente.</p>
+      </div>
+    </aside>
+
+    <!-- Arquitectura -->
+    <section class="card arch" id="arch" aria-labelledby="archTitle">
+      <div class="sec-head">
+        <h2 class="sec-title" id="archTitle">Cluster Architecture</h2>
+        <div class="arch-legend" aria-hidden="true">
+          <span><i style="background:var(--blue)"></i>Running</span>
+          <span><i style="background:var(--amber)"></i>Lectura HDFS / shuffle</span>
+          <span><i style="background:var(--green)"></i>Cache hit</span>
+          <span><i style="background:var(--faint)"></i>Waiting</span>
+        </div>
+      </div>
+      <div class="arch-top">
+        <div class="node users" id="nUsers">
+          <h3><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm7 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM2 20c0-3.3 3.1-6 7-6s7 2.7 7 6v1H2zm15.5 1v-1c0-1.9-.7-3.6-1.9-4.9 3.4.2 6.4 2.4 6.4 5v.9z"/></svg>Users</h3>
+          <p class="sub">Clientes que envían aplicaciones</p>
+          <div class="kv"><span>Active Users</span><b id="uActive">0 / 0</b><span>Jobs enviados</span><b id="uSent">0</b></div>
+          <div class="uchips" id="uChips"></div>
+        </div>
+        <div class="conn" aria-hidden="true"></div>
+        <div class="node driver" id="nDriver">
+          <h3><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 4h16v12H4zm-2 14h20v2H2zM6 6v8h12V6z"/></svg>Spark Driver</h3>
+          <p class="sub">SparkContext · app-puj-sim</p>
+          <div class="kv">
+            <span>Jobs</span><b id="dJobs">0</b>
+            <span>Active Jobs</span><b id="dActive">0</b>
+            <span>Stages</span><b id="dStages">0</b>
+            <span>Tasks</span><b id="dTasks">0</b>
+            <span>Status</span><b id="dStatus">IDLE</b>
+          </div>
+        </div>
+        <div class="conn bi" aria-hidden="true"></div>
+        <div class="node cm" id="nCM">
+          <h3><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M10 3h4v4h-4zM3 17h4v4H3zm7 0h4v4h-4zm7 0h4v4h-4zM11 7h2v4h6v6h-2v-4h-4v4h-2v-4H7v4H5v-6h6z"/></svg>Cluster Manager</h3>
+          <p class="sub">Standalone · FAIR + data locality</p>
+          <div class="kv">
+            <span>Active Workers</span><b id="cmWorkers">0</b>
+            <span>Available Cores</span><b id="cmAvail">0</b>
+            <span>Used Cores</span><b id="cmUsed">0</b>
+            <span>Pending Tasks</span><b id="cmPending">0</b>
+            <span>Dispatching</span><b id="cmDispatch">0</b>
+          </div>
+        </div>
+        <div class="gap" aria-hidden="true">⇅</div>
+        <div class="node hdfs" id="nHDFS">
+          <h3><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2c4.4 0 8 1.3 8 3v14c0 1.7-3.6 3-8 3s-8-1.3-8-3V5c0-1.7 3.6-3 8-3zm0 2C8.1 4 6 5 6 5.5S8.1 7 12 7s6-1 6-1.5S15.9 4 12 4zM6 8.2V12c0 .5 2.1 1.5 6 1.5s6-1 6-1.5V8.2C16.6 8.7 14.4 9 12 9s-4.6-.3-6-.8zm0 6V19c0 .5 2.1 1.5 6 1.5s6-1 6-1.5v-4.8c-1.4.5-3.6.8-6 .8s-4.6-.3-6-.8z"/></svg>RDD / HDFS</h3>
+          <p class="sub">Accedido por cada worker · réplica ×3</p>
+          <div class="kv">
+            <span>Dataset</span><b id="hData">0 GB</b>
+            <span>Blocks</span><b id="hBlocks">0</b>
+            <span>Reads</span><b id="hReads">0</b>
+            <span>Writes</span><b id="hWrites">0</b>
+            <span>Cached Blocks</span><b id="hCached">0</b>
+          </div>
+        </div>
+      </div>
+      <div class="bus" aria-hidden="true"><span id="busLabel">TASK DISPATCH → EXECUTORS</span></div>
+      <div class="workers" id="workers" aria-label="Worker nodes"></div>
+      <div class="fly-layer" id="flyLayer" aria-hidden="true"></div>
+    </section>
+  </div>
+
+  <!-- Jobs + Eventos -->
+  <div class="two">
+    <section class="card" aria-labelledby="jobsTitle">
+      <div class="sec-head"><h2 class="sec-title" id="jobsTitle">Jobs</h2><span class="muted small" id="jobsSummary"></span></div>
+      <div class="sec-body">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Job ID</th><th>User</th><th>Tasks</th><th>Stage</th><th>Status</th><th>Duration</th></tr></thead>
+            <tbody id="jobsBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+    <section class="card" aria-labelledby="logTitle">
+      <div class="sec-head">
+        <h2 class="sec-title" id="logTitle">Cluster Events</h2>
+        <div style="display:flex;gap:8px;align-items:center">
+          <label for="logFilter" class="sr-only">Filtrar eventos</label>
+          <select id="logFilter">
+            <option value="all">Todos</option>
+            <option value="job">Jobs y stages</option>
+            <option value="task">Tasks</option>
+            <option value="cache">Caché y HDFS</option>
+            <option value="worker">Workers</option>
+            <option value="alert">Alertas</option>
+          </select>
+          <span class="muted small mono" id="logCount">0</span>
+        </div>
+      </div>
+      <div class="sec-body"><div class="log" id="log" role="log" aria-label="Registro de eventos del clúster"></div></div>
+    </section>
+  </div>
+
+  <!-- Métricas -->
+  <section class="card" aria-labelledby="metTitle">
+    <div class="sec-head"><h2 class="sec-title" id="metTitle">Cluster Metrics</h2><span class="muted small">Muestreo cada 0.5 s de tiempo simulado</span></div>
+    <div class="sec-body charts">
+      <div class="chart wide"><div class="chart-head"><h4>CPU por Worker</h4><b id="v-cpu">0%</b></div><canvas id="c-cpu" aria-label="CPU por worker"></canvas></div>
+      <div class="chart wide"><div class="chart-head"><h4>RAM por Worker</h4><b id="v-mem">0%</b></div><canvas id="c-mem" aria-label="RAM por worker"></canvas></div>
+      <div class="chart wide"><div class="chart-head"><h4>Tasks: completadas · pendientes · en ejecución</h4><b id="v-tasks">0</b></div><canvas id="c-tasks" aria-label="Tasks en el tiempo"></canvas>
+        <div class="legend"><span><i style="background:var(--green)"></i>Completadas</span><span><i style="background:var(--amber)"></i>Pendientes</span><span><i style="background:var(--blue)"></i>Running</span></div></div>
+      <div class="chart"><div class="chart-head"><h4>Throughput</h4><b id="v-thr">0 t/s</b></div><canvas id="c-thr" aria-label="Throughput"></canvas></div>
+      <div class="chart"><div class="chart-head"><h4>Latencia de task</h4><b id="v-lat">0 s</b></div><canvas id="c-lat" aria-label="Latencia"></canvas>
+        <div class="legend"><span><i style="background:var(--violet)"></i>Cola + ejecución</span><span><i style="background:var(--blue)"></i>Ejecución</span></div></div>
+      <div class="chart"><div class="chart-head"><h4>Cache Hit Rate</h4><b id="v-hit">0%</b></div><canvas id="c-hit" aria-label="Cache hit rate"></canvas></div>
+      <div class="chart"><div class="chart-head"><h4>Cluster Utilization</h4><b id="v-util">0%</b></div><canvas id="c-util" aria-label="Utilización del clúster"></canvas>
+        <div class="legend"><span><i style="background:var(--blue)"></i>CPU</span><span><i style="background:var(--violet)"></i>Memoria</span></div></div>
+      <div class="chart wide"><div class="chart-head"><h4>Caché ocupada por Worker</h4><b id="v-cache">0%</b></div><canvas id="c-cache" aria-label="Caché por worker"></canvas></div>
+    </div>
+  </section>
+
+  <!-- Rendimiento -->
+  <section class="card" id="perf" aria-labelledby="perfTitle">
+    <div class="sec-head"><h2 class="sec-title" id="perfTitle">Performance Analysis</h2><span class="muted small">Todos los valores salen del motor de simulación</span></div>
+    <div class="sec-body perf-grid">
+      <div>
+        <div class="stats">
+          <div class="stat"><span>Execution Time</span><b id="p-exec">0.0 s</b><small id="p-exec-s">tiempo simulado</small></div>
+          <div class="stat"><span>Avg Task Time</span><b id="p-avg">0.00 s</b><small>inicio → fin en executor</small></div>
+          <div class="stat"><span>Throughput</span><b id="p-thr">0.0 t/s</b><small id="p-thr-s">promedio de la ejecución</small></div>
+          <div class="stat"><span>Cluster Utilization</span><b id="p-util">0%</b><small>core·s ocupados / disponibles</small></div>
+          <div class="stat"><span>Cache Hit Rate</span><b id="p-hit">0%</b><small id="p-hit-s">0 hits · 0 misses</small></div>
+          <div class="stat"><span>Tasks Completed</span><b id="p-done" class="ok">0</b><small id="p-done-s">de 0</small></div>
+          <div class="stat"><span>Tasks Failed</span><b id="p-fail">0</b><small id="p-fail-s">0 reintentos</small></div>
+          <div class="stat"><span>Avg Latency</span><b id="p-lat">0.00 s</b><small>incluye espera en cola</small></div>
+        </div>
+        <h3 class="mini-title">Ejecuciones registradas</h3>
+        <div class="table-wrap short">
+          <table>
+            <thead><tr><th>#</th><th>Workers</th><th>Users</th><th>Tasks</th><th>Tiempo</th><th>t/s</th><th>Hit</th><th>Util.</th><th>Fail</th></tr></thead>
+            <tbody id="histBody"></tbody>
+          </table>
+        </div>
+        <div style="margin-top:8px"><button class="btn sm" id="btnClearHist" type="button">Borrar historial</button></div>
+      </div>
+      <div class="bench">
+        <div class="bench-head">
+          <div>
+            <h3 class="mini-title">Escalabilidad horizontal</h3>
+            <p class="muted small" style="margin:0" id="benchDesc">Misma carga, distinto número de nodos.</p>
+          </div>
+          <button class="btn blue sm" id="btnBench" type="button" title="Ejecuta la carga actual en modo acelerado con 3, 6 y 10 workers">▶ Recalcular comparación</button>
+        </div>
+        <div class="bench-bars" id="benchBars"></div>
+        <div class="table-wrap short">
+          <table>
+            <thead><tr><th>Workers</th><th>Tiempo</th><th>Speedup</th><th>Eficiencia</th><th>t/s</th><th>Util.</th><th>Hit</th></tr></thead>
+            <tbody id="benchBody"></tbody>
+          </table>
+        </div>
+        <div class="insight" id="benchInsight">Calculando…</div>
+      </div>
+    </div>
+  </section>
+
+  <p class="foot">Simulación educativa · archivo único autosuficiente (HTML + CSS + JavaScript), sin dependencias ni conexión a Internet.</p>
+</main>
+
+<!-- Modal de Worker -->
+<div class="backdrop" id="wModal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="wTitle">
+    <header><h2 id="wTitle">WORKER</h2><button class="icon-btn" type="button" data-close aria-label="Cerrar">✕</button></header>
+    <div class="body" id="wBody"></div>
+    <div class="body" style="padding-top:0">
+      <h3 class="mini-title" style="margin-top:0">History</h3>
+      <div class="hist" id="wHist"></div>
+    </div>
+    <footer>
+      <button class="btn" id="wToggle" type="button">⚠ Simular caída del nodo</button>
+      <button class="btn primary" type="button" data-close>Cerrar</button>
+    </footer>
+  </div>
+</div>
+
+<!-- Modal final -->
+<div class="backdrop" id="doneModal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="doneTitle">
+    <header><h2 id="doneTitle">SIMULATION COMPLETED</h2><button class="icon-btn" type="button" data-close aria-label="Cerrar">✕</button></header>
+    <div class="body" id="doneBody"></div>
+    <footer>
+      <button class="btn" type="button" data-close>Cerrar</button>
+      <button class="btn" type="button" id="doneAnalysis">Ver análisis</button>
+      <button class="btn primary" type="button" id="runAgain">↻ RUN AGAIN</button>
+    </footer>
+  </div>
+</div>
+
+<noscript><p style="text-align:center;padding:20px">Este simulador necesita JavaScript habilitado.</p></noscript>
+
+<script>
+'use strict';
+/* =========================================================
+   0. UTILIDADES
+   ========================================================= */
+const $ = (s, r = document) => r.querySelector(s);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const pad = (n, l = 2) => String(n).padStart(l, '0');
+const f1 = v => (Math.round(v * 10) / 10).toFixed(1);
+const f2 = v => (Math.round(v * 100) / 100).toFixed(2);
+const pct = v => Math.round(v) + '%';
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+const Store = {
+  get(k, d) { try { const v = localStorage.getItem('sparksim:' + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem('sparksim:' + k, JSON.stringify(v)); } catch (e) { /* almacenamiento no disponible */ } }
+};
+function cssVar(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+
+/* =========================================================
+   1. PARÁMETROS DEL MODELO
+   ========================================================= */
+const SIM = {
+  BLOCK_GB: 0.5,          // tamaño de bloque HDFS / partición RDD
+  DISK_GBPS: 0.45,        // lectura de disco HDFS por task
+  NET_PENALTY: 0.55,      // lectura remota (bloque no local)
+  HIT_READ: 0.08,         // lectura desde caché en memoria
+  IO_CPU: 0.25,           // fracción de core usada mientras una task espera E/S
+  DISPATCH_DELAY: 0.15,   // latencia CM → executor
+  EXEC_OVERHEAD_GB: 1,    // memoria base de la JVM del executor
+  MAX_ATTEMPTS: 2,        // spark.task.maxFailures (simplificado)
+  LOCALITY_SLACK: 0.5,    // cuánta carga extra se tolera para respetar localidad
+  REPLICATION: 3,
+  SAMPLE_EVERY: 0.5,
+  STAGE_NAMES: ['scan + map', 'shuffle + aggregate', 'reduce + write']
+};
+const LIMITS = {
+  workers:     { min: 1,  max: 20,   step: 1,  unit: '' },
+  users:       { min: 1,  max: 30,   step: 1,  unit: '' },
+  jobs:        { min: 1,  max: 60,   step: 1,  unit: '' },
+  tasksPerJob: { min: 3,  max: 40,   step: 1,  unit: '' },
+  ramGB:       { min: 4,  max: 64,   step: 4,  unit: ' GB' },
+  cores:       { min: 2,  max: 32,   step: 2,  unit: ' cores' },
+  cacheGB:     { min: 1,  max: 16,   step: 1,  unit: ' GB' },
+  datasetGB:   { min: 10, max: 1000, step: 10, unit: ' GB' }
+};
+const DEFAULT_CFG = { workers: 6, users: 8, jobs: 10, tasksPerJob: 12, ramGB: 16, cores: 8, cacheGB: 4, datasetGB: 250 };
+const SCENARIOS = {
+  light:  { name: 'LIGHT LOAD',  cfg: { workers: 6, users: 2,  jobs: 8,  tasksPerJob: 8,  ramGB: 16, cores: 8, cacheGB: 4, datasetGB: 100 } },
+  normal: { name: 'NORMAL LOAD', cfg: { ...DEFAULT_CFG } },
+  high:   { name: 'HIGH LOAD',   cfg: { workers: 6, users: 14, jobs: 24, tasksPerJob: 16, ramGB: 16, cores: 8, cacheGB: 4, datasetGB: 500 } },
+  stress: { name: 'STRESS TEST', cfg: { workers: 4, users: 20, jobs: 40, tasksPerJob: 10, ramGB: 8,  cores: 8, cacheGB: 2, datasetGB: 800 } }
+};
+const SPEEDS = [0.5, 1, 2, 5];
+const SEED = 2026;
+
+function normalizeCfg(c) {
+  const o = {};
+  for (const k in LIMITS) {
+    const L = LIMITS[k];
+    let v = Number(c && c[k]);
+    if (!isFinite(v)) v = DEFAULT_CFG[k];
+    v = Math.round(v);
+    o[k] = clamp(v, L.min, L.max);
+  }
+  o.cacheGB = Math.min(o.cacheGB, Math.max(1, Math.floor(o.ramGB / 2)));
+  return o;
+}
+function stageSizes(T) {
+  const s2 = Math.max(1, Math.round(T * 0.2));
+  const s1 = Math.max(1, Math.round(T * 0.3));
+  return [Math.max(1, T - s1 - s2), s1, s2];
+}
+
+/* =========================================================
+   2. MODELO: Storage, Cache, Executor, WorkerNode, Task, Job, User
+   ========================================================= */
+class Storage {
+  constructor(datasetGB) {
+    this.datasetGB = datasetGB;
+    this.blockGB = SIM.BLOCK_GB;
+    this.blocks = Math.max(1, Math.ceil(datasetGB / this.blockGB));
+    this.reads = 0;
+    this.writes = 0;
+  }
+}
+
+class Cache { // LRU de bloques en memoria del executor
+  constructor(capacityGB) {
+    this.capacityGB = capacityGB;
+    this.capacityBlocks = Math.max(1, Math.floor(capacityGB / SIM.BLOCK_GB));
+    this.lru = new Map();
+    this.hits = 0; this.misses = 0; this.evictions = 0;
+  }
+  touch(b) { if (!this.lru.has(b)) return false; this.lru.delete(b); this.lru.set(b, true); return true; }
+  put(b) {
+    const evicted = [];
+    if (this.touch(b)) return evicted;
+    while (this.lru.size >= this.capacityBlocks) {
+      const k = this.lru.keys().next().value;
+      this.lru.delete(k); evicted.push(k); this.evictions++;
+    }
+    this.lru.set(b, true);
+    return evicted;
+  }
+  clear() { const keys = [...this.lru.keys()]; this.lru.clear(); return keys; }
+  get usedGB() { return this.lru.size * SIM.BLOCK_GB; }
+}
+
+class Executor {
+  constructor(workerId, cores, memoryGB) {
+    this.id = 'executor-' + pad(workerId);
+    this.cores = cores; this.memoryGB = memoryGB;
+    this.running = []; this.queue = [];
+  }
+  get load() { return this.running.length + this.queue.length; }
+}
+
+class WorkerNode {
+  constructor(id, cfg) {
+    this.id = id;
+    this.name = 'WORKER ' + pad(id);
+    this.cpuTotal = cfg.cores;
+    this.memoryTotal = cfg.ramGB;
+    this.cache = new Cache(cfg.cacheGB);
+    this.executor = new Executor(id, cfg.cores, cfg.ramGB);
+    this.online = true;
+    this.status = 'ONLINE';
+    this.completed = 0; this.failed = 0;
+    this.history = []; this.doneTimes = []; this.recentDone = [];
+    this.lastOverloadLog = -99;
+  }
+  get running() { return this.executor.running; }
+  get queue() { return this.executor.queue; }
+  get cpuUsed() { let c = 0; for (const t of this.executor.running) c += t.phase === 'read' ? SIM.IO_CPU : 1; return c; }
+  get taskMemory() { let m = 0; for (const t of this.executor.running) m += t.memNeed; return m; }
+  get memoryUsedRaw() { return this.online ? SIM.EXEC_OVERHEAD_GB + this.cache.usedGB + this.taskMemory : 0; }
+  get memPressure() { return this.memoryUsedRaw / this.memoryTotal; }
+  get cpuPct() { return this.online ? this.cpuUsed / this.cpuTotal * 100 : 0; }
+  get memPct() { return Math.min(100, this.memPressure * 100); }
+  get cachePct() { return this.online ? this.cache.usedGB / this.cache.capacityGB * 100 : 0; }
+  get slack() { return Math.max(1, Math.ceil(this.cpuTotal / 4)); }
+  capacity() { return this.online ? this.cpuTotal + this.slack - this.executor.load : 0; }
+  loadScore() { return this.executor.load / this.cpuTotal + this.memPressure * 0.5; }
+  throughput(now) {
+    const W = 3;
+    while (this.doneTimes.length && this.doneTimes[0] < now - W) this.doneTimes.shift();
+    return this.doneTimes.length / Math.min(W, Math.max(now, 0.5));
+  }
+}
+
+class Task {
+  constructor(id, job, stage, partition, blockId, memNeed, computeTime) {
+    this.id = id; this.name = 'T-' + pad(id, 4);
+    this.jobId = job.id; this.userId = job.userId;
+    this.stage = stage; this.partition = partition; this.blockId = blockId;
+    this.memNeed = memNeed; this.computeTime = computeTime;
+    this.workerId = null; this.status = 'BLOCKED';
+    this.progress = 0; this.cacheHit = null; this.locality = null;
+    this.attempts = 0; this.readTime = 0; this.elapsed = 0; this.phase = null;
+    this.releasedAt = null; this.arriveAt = null; this.startAt = null; this.endAt = null;
+  }
+  get duration() { return this.readTime + this.computeTime; }
+}
+
+class Job {
+  constructor(id, userId) {
+    this.id = id; this.name = 'J-' + pad(id, 3); this.userId = userId;
+    this.stages = []; this.tasks = []; this.pending = [];
+    this.currentStage = -1; this.status = 'QUEUED';
+    this.submitAt = null; this.endAt = null;
+    this.inFlight = 0; this.done = 0; this.failed = 0;
+  }
+}
+
+class User {
+  constructor(id) { this.id = id; this.name = 'USER ' + pad(id); this.queue = []; this.current = null; this.nextSubmitAt = 0; this.submitted = 0; this.state = 'IDLE'; }
+}
+
+/* =========================================================
+   3. Cluster, Scheduler, ClusterManager, Metrics
+   ========================================================= */
+class Cluster {
+  constructor(cfg) { this.workers = []; for (let i = 0; i < cfg.workers; i++) this.workers.push(new WorkerNode(i + 1, cfg)); }
+  online() { return this.workers.filter(w => w.online); }
+  byId(id) { return this.workers.find(w => w.id === id) || null; }
+  totalCores() { let c = 0; for (const w of this.workers) if (w.online) c += w.cpuTotal; return c; }
+  replicasOf(b) {
+    const n = this.workers.length, r = Math.min(SIM.REPLICATION, n), out = [];
+    for (let k = 0; k < r; k++) out.push(this.workers[(b + k) % n]);
+    return out;
+  }
+}
+
+class Scheduler {
+  constructor(engine) { this.e = engine; }
+  // FAIR: atiende primero al job activo con menos tasks en vuelo
+  pickJob() {
+    let best = null;
+    for (const j of this.e.cm.activeJobs) {
+      if (!j.pending.length) continue;
+      if (!best || j.inFlight < best.inFlight || (j.inFlight === best.inFlight && j.submitAt < best.submitAt)) best = j;
+    }
+    return best;
+  }
+  // Balance de carga + localidad (caché > réplica HDFS > cualquier nodo)
+  pickWorker(task) {
+    const e = this.e;
+    let best = null, bestScore = Infinity;
+    for (const w of e.cluster.workers) {
+      if (w.capacity() <= 0) continue;
+      const s = w.loadScore();
+      if (s < bestScore) { bestScore = s; best = w; }
+    }
+    if (!best) return null;
+    if (task.stage !== 0) return { worker: best, locality: 'SHUFFLE' };
+    let pref = null, kind = 'ANY';
+    const holders = e.blockLocations.get(task.blockId);
+    if (holders && holders.size) {
+      for (const id of holders) {
+        const w = e.cluster.byId(id);
+        if (w && w.capacity() > 0 && (!pref || w.loadScore() < pref.loadScore())) pref = w;
+      }
+      if (pref) kind = 'PROCESS_LOCAL';
+    }
+    if (!pref) {
+      for (const w of e.cluster.replicasOf(task.blockId)) {
+        if (w.capacity() > 0 && (!pref || w.loadScore() < pref.loadScore())) pref = w;
+      }
+      if (pref) kind = 'NODE_LOCAL';
+    }
+    if (pref && pref.loadScore() <= bestScore + SIM.LOCALITY_SLACK) return { worker: pref, locality: kind };
+    return { worker: best, locality: e.cluster.replicasOf(task.blockId).includes(best) ? 'NODE_LOCAL' : 'ANY' };
+  }
+  schedule() {
+    let n = 0;
+    while (n < 500) {
+      const job = this.pickJob(); if (!job) break;
+      const r = this.pickWorker(job.pending[0]); if (!r) break;
+      const t = job.pending.shift();
+      this.e.assign(t, r.worker, r.locality, job);
+      n++;
+    }
+    return n;
+  }
+}
+
+class ClusterManager {
+  constructor(engine) { this.e = engine; this.activeJobs = []; this.scheduler = new Scheduler(engine); }
+  pendingCount() { let n = 0; for (const j of this.activeJobs) n += j.pending.length; return n; }
+  usedCores() { let n = 0; for (const w of this.e.cluster.workers) n += w.running.length; return n; }
+  dispatching() { let n = 0; for (const w of this.e.cluster.workers) for (const t of w.queue) if (t.status === 'ASSIGNED') n++; return n; }
+  queued() { let n = 0; for (const w of this.e.cluster.workers) n += w.queue.length; return n; }
+}
+
+class Metrics {
+  constructor(e) {
+    this.e = e; this.samples = []; this.nextSample = 0;
+    this.hits = 0; this.misses = 0; this.recent = [];
+    this.sumExec = 0; this.sumLat = 0; this.n = 0;
+    this.busyCoreTime = 0; this.capCoreTime = 0; this.peakThr = 0;
+    this._lat = 0; this._exec = 0;
+  }
+  get hitRate() { const n = this.hits + this.misses; return n ? this.hits / n * 100 : 0; }
+  recordTask(t) {
+    const exec = t.endAt - t.startAt, lat = t.endAt - t.releasedAt;
+    this.sumExec += exec; this.sumLat += lat; this.n++;
+    this.recent.push({ at: t.endAt, exec, lat });
+  }
+  throughput(now) {
+    const W = 3; let c = 0;
+    for (let i = this.recent.length - 1; i >= 0; i--) { if (this.recent[i].at < now - W) break; c++; }
+    return c / Math.min(W, Math.max(now, 0.5));
+  }
+  windowStats(now) {
+    const W = 6; let n = 0, l = 0, x = 0;
+    for (let i = this.recent.length - 1; i >= 0; i--) { const r = this.recent[i]; if (r.at < now - W) break; n++; l += r.lat; x += r.exec; }
+    if (n) { this._lat = l / n; this._exec = x / n; }
+    return { lat: this._lat, exec: this._exec };
+  }
+  snapshot() {
+    const e = this.e, now = e.time;
+    let cores = 0, used = 0, memU = 0, memT = 0, running = 0;
+    for (const w of e.cluster.workers) {
+      if (!w.online) continue;
+      cores += w.cpuTotal; used += w.cpuUsed; running += w.running.length;
+      memU += Math.min(w.memoryUsedRaw, w.memoryTotal); memT += w.memoryTotal;
+    }
+    const thr = this.throughput(now);
+    this.peakThr = Math.max(this.peakThr, thr);
+    const ws = this.windowStats(now);
+    return {
+      t: now, cpu: cores ? used / cores * 100 : 0, mem: memT ? memU / memT * 100 : 0,
+      throughput: thr, latency: ws.lat, exec: ws.exec, hitRate: this.hitRate,
+      completed: e.counters.completed, pending: e.cm.pendingCount() + e.cm.queued(), running
+    };
+  }
+  tick(dt) {
+    const e = this.e; let cores = 0, used = 0;
+    for (const w of e.cluster.workers) { if (!w.online) continue; cores += w.cpuTotal; used += w.cpuUsed; }
+    this.busyCoreTime += used * dt; this.capCoreTime += cores * dt;
+    while (this.recent.length && this.recent[0].at < e.time - 12) this.recent.shift();
+    if (e.time >= this.nextSample) {
+      this.nextSample = e.time + SIM.SAMPLE_EVERY;
+      const s = this.snapshot();
+      this.samples.push(s);
+      if (this.samples.length > 720) this.samples.shift();
+      e.emit('sample', s);
+    }
+  }
+}
+
+/* =========================================================
+   4. SimulationEngine — lógica independiente de la interfaz
+   ========================================================= */
+class SimulationEngine {
+  constructor(cfg, opts = {}) {
+    this.cfg = { ...cfg };
+    this.rng = mulberry32(opts.seed != null ? opts.seed : SEED);
+    this.hooks = opts.hooks || {};
+    this.time = 0; this.done = false; this.started = false; this.endTime = null;
+    this.taskSeq = 0; this.jobSeq = 0;
+    this.counters = { completed: 0, failed: 0, retries: 0, rescheduled: 0 };
+    this.storage = new Storage(cfg.datasetGB);
+    this.cluster = new Cluster(cfg);
+    this.blockLocations = new Map();
+    this.cm = new ClusterManager(this);
+    this.metrics = new Metrics(this);
+    this.users = []; this.jobs = []; this.tasks = [];
+    for (let i = 0; i < cfg.users; i++) this.users.push(new User(i + 1));
+    for (let i = 0; i < cfg.jobs; i++) this.createJob(this.users[i % this.users.length]);
+    for (const u of this.users) { u.nextSubmitAt = this.rng() * 1.2; u.state = u.queue.length ? 'READY' : 'IDLE'; }
+  }
+  emit(type, data) { if (this.hooks.onEvent) this.hooks.onEvent(type, data, this.time); }
+  rand(a, b) { return a + (b - a) * this.rng(); }
+  jobById(id) { return this.jobs[id - 1]; }
+
+  // Los jobs leen "tablas" contiguas; las más consultadas (sesgo) se reutilizan → la caché tiene sentido
+  createJob(user) {
+    const job = new Job(++this.jobSeq, user.id);
+    const sizes = stageSizes(this.cfg.tasksPerJob);
+    const blocks = this.storage.blocks;
+    // El dataset se divide en "tablas" del tamaño del stage 0; las primeras son las más consultadas (Zipf aproximado)
+    const tables = Math.max(1, Math.floor(blocks / sizes[0]));
+    // 75% de las consultas van a un conjunto "caliente" (~3% del dataset); el resto son escaneos fríos
+    const hot = Math.min(tables, Math.max(2, Math.round(tables * 0.03)));
+    const tIdx = this.rng() < 0.75 ? Math.floor(hot * Math.pow(this.rng(), 1.5)) : Math.floor(tables * this.rng());
+    const start = Math.min(tables - 1, tIdx) * sizes[0];
+    sizes.forEach((count, s) => {
+      const stage = [];
+      for (let p = 0; p < count; p++) {
+        const block = s === 0 ? (start + p) % blocks : -1;
+        const mem = s === 0 ? this.rand(0.7, 1.0) : s === 1 ? this.rand(0.9, 1.3) : this.rand(0.5, 0.7);
+        const compute = s === 0 ? SIM.BLOCK_GB * 3.2 * this.rand(0.8, 1.25) : s === 1 ? this.rand(1.0, 1.6) : this.rand(0.6, 1.0);
+        const t = new Task(++this.taskSeq, job, s, p, block, mem, compute);
+        stage.push(t); job.tasks.push(t); this.tasks.push(t);
+      }
+      job.stages.push(stage);
+    });
+    user.queue.push(job);
+    this.jobs.push(job);
+    return job;
+  }
+  submit(user) {
+    const job = user.queue.shift();
+    user.current = job; user.state = 'RUNNING'; user.submitted++;
+    job.status = 'RUNNING'; job.submitAt = this.time;
+    this.cm.activeJobs.push(job);
+    this.emit('job-submit', { job, user });
+    this.releaseStage(job, 0);
+  }
+  releaseStage(job, s) {
+    job.currentStage = s;
+    for (const t of job.stages[s]) { t.status = 'PENDING'; t.releasedAt = this.time; job.pending.push(t); }
+    this.emit('stage-submit', { job, stage: s, count: job.stages[s].length });
+  }
+  assign(t, w, locality, job) {
+    t.status = 'ASSIGNED'; t.workerId = w.id; t.locality = locality;
+    t.arriveAt = this.time + SIM.DISPATCH_DELAY;
+    w.queue.push(t); job.inFlight++;
+    this.emit('task-assign', { task: t, worker: w, locality });
+  }
+  startTask(t, w) {
+    t.status = 'RUNNING'; t.startAt = this.time; t.elapsed = 0; t.progress = 0; t.attempts++;
+    if (t.stage === 0) {
+      const hit = w.cache.touch(t.blockId);
+      t.cacheHit = hit;
+      if (hit) {
+        w.cache.hits++; this.metrics.hits++;
+        t.locality = 'PROCESS_LOCAL'; t.readTime = SIM.HIT_READ;
+        this.emit('cache-hit', { task: t, worker: w });
+      } else {
+        w.cache.misses++; this.metrics.misses++; this.storage.reads++;
+        const local = this.cluster.replicasOf(t.blockId).includes(w);
+        t.locality = local ? 'NODE_LOCAL' : 'ANY';
+        t.readTime = SIM.BLOCK_GB / SIM.DISK_GBPS * this.rand(0.9, 1.15) + (local ? 0 : SIM.NET_PENALTY);
+        this.emit('cache-miss', { task: t, worker: w, local });
+      }
+    } else {
+      t.cacheHit = null;
+      t.readTime = 0.3 + this.rand(0, 0.2); // shuffle fetch
+    }
+    t.phase = 'read';
+    w.running.push(t);
+  }
+  cacheInsert(w, b) {
+    const evicted = w.cache.put(b);
+    let set = this.blockLocations.get(b);
+    if (!set) { set = new Set(); this.blockLocations.set(b, set); }
+    set.add(w.id);
+    for (const k of evicted) { const s = this.blockLocations.get(k); if (s) { s.delete(w.id); if (!s.size) this.blockLocations.delete(k); } }
+  }
+  pushHistory(w, t, status) {
+    w.history.push({ name: t.name, job: 'J-' + pad(t.jobId, 3), stage: t.stage, status, dur: t.endAt - t.startAt, hit: t.cacheHit, locality: t.locality });
+    if (w.history.length > 60) w.history.shift();
+    w.recentDone.push({ task: t, at: this.time, status });
+    if (w.recentDone.length > 6) w.recentDone.shift();
+  }
+  finishTask(t, w) {
+    const pressure = w.memPressure;
+    const overloaded = w.status === 'OVERLOADED';
+    w.running.splice(w.running.indexOf(t), 1);
+    const job = this.jobById(t.jobId);
+    job.inFlight--;
+    t.endAt = this.time;
+    const failP = 0.003 + (pressure > 0.95 ? 0.07 : pressure > 0.9 ? 0.03 : 0) + (overloaded ? 0.01 : 0);
+    if (this.rng() < failP) {
+      w.failed++;
+      const reason = pressure > 0.9 ? 'OutOfMemoryError (presión de memoria)' : 'ExecutorLostFailure (timeout)';
+      this.pushHistory(w, t, 'FAILED');
+      if (t.attempts < SIM.MAX_ATTEMPTS) {
+        this.counters.retries++;
+        t.status = 'PENDING'; t.workerId = null; t.elapsed = 0; t.progress = 0; t.phase = null;
+        job.pending.unshift(t);
+        this.emit('task-retry', { task: t, worker: w, reason });
+        return;
+      }
+      t.status = 'FAILED'; job.failed++; this.counters.failed++;
+      this.emit('task-failed', { task: t, worker: w, reason });
+    } else {
+      t.status = 'COMPLETED'; t.progress = 1;
+      job.done++; w.completed++; w.doneTimes.push(this.time); this.counters.completed++;
+      this.metrics.recordTask(t);
+      if (t.stage === job.stages.length - 1) this.storage.writes++;
+      this.pushHistory(w, t, 'COMPLETED');
+      this.emit('task-complete', { task: t, worker: w });
+    }
+    this.checkStage(job);
+  }
+  checkStage(job) {
+    const stage = job.stages[job.currentStage];
+    if (!stage.every(t => t.status === 'COMPLETED' || t.status === 'FAILED')) return;
+    if (job.currentStage < job.stages.length - 1) {
+      this.emit('stage-complete', { job, stage: job.currentStage });
+      this.releaseStage(job, job.currentStage + 1);
+    } else this.finishJob(job);
+  }
+  finishJob(job) {
+    job.status = job.failed ? 'FAILED' : 'COMPLETED'; job.endAt = this.time;
+    this.cm.activeJobs.splice(this.cm.activeJobs.indexOf(job), 1);
+    const u = this.users[job.userId - 1];
+    u.current = null;
+    u.state = u.queue.length ? 'THINKING' : 'DONE';
+    u.nextSubmitAt = this.time + this.rand(0.4, 1.4);
+    this.emit('job-complete', { job, user: u });
+  }
+  processWorkers(dt) {
+    for (const w of this.cluster.workers) {
+      if (!w.online) continue;
+      for (const t of w.queue) if (t.status === 'ASSIGNED' && t.arriveAt <= this.time) t.status = 'WAITING';
+      while (w.running.length < w.cpuTotal) {
+        const idx = w.queue.findIndex(t => t.status === 'WAITING');
+        if (idx < 0) break;
+        const t = w.queue[idx];
+        const free = w.memoryTotal - w.memoryUsedRaw;
+        if (w.running.length > 0 && t.memNeed > free + 1e-6) break; // admisión por memoria
+        w.queue.splice(idx, 1);
+        this.startTask(t, w);
+      }
+      const p = w.memPressure;
+      const slow = p > 0.92 ? 1.6 : p > 0.85 ? 1.2 : 1; // spill a disco / GC
+      for (const t of w.running.slice()) {
+        t.elapsed += dt / slow;
+        if (t.phase === 'read' && t.elapsed >= t.readTime) {
+          t.phase = 'compute';
+          if (t.stage === 0 && !t.cacheHit) this.cacheInsert(w, t.blockId);
+        }
+        t.progress = Math.min(1, t.elapsed / t.duration);
+        if (t.elapsed >= t.duration) this.finishTask(t, w);
+      }
+    }
+  }
+  updateStatuses() {
+    const clusterCores = this.cluster.totalCores();
+    const pending = this.cm.pendingCount();
+    for (const w of this.cluster.workers) {
+      let s;
+      if (!w.online) s = 'OFFLINE';
+      else if (!this.started) s = 'ONLINE';
+      else if (!w.running.length && !w.queue.length) s = 'IDLE';
+      else if (w.memPressure > 0.92 || (w.queue.length >= w.slack && pending > clusterCores)) s = 'OVERLOADED';
+      else s = 'BUSY';
+      if (s !== w.status) {
+        w.status = s;
+        if (s === 'OVERLOADED' && this.time - w.lastOverloadLog > 4) { w.lastOverloadLog = this.time; this.emit('worker-overloaded', { worker: w }); }
+      }
+    }
+  }
+  step(dt) {
+    if (this.done) return;
+    this.started = true;
+    this.time += dt;
+    for (const u of this.users) if (!u.current && u.queue.length && this.time >= u.nextSubmitAt) this.submit(u);
+    this.cm.scheduler.schedule();
+    this.processWorkers(dt);
+    this.cm.scheduler.schedule();
+    this.updateStatuses();
+    this.metrics.tick(dt);
+    if (this.jobs.length && this.jobs.every(j => j.status === 'COMPLETED' || j.status === 'FAILED')) {
+      this.done = true; this.endTime = this.time;
+      this.updateStatuses();
+      this.emit('sim-complete', this.summary());
+    }
+  }
+  // Fallo / recuperación de un nodo: sus tasks vuelven a la cola (tolerancia a fallos)
+  setWorkerOnline(w, on) {
+    if (w.online === on) return;
+    if (!on) {
+      const tasks = [...w.running, ...w.queue];
+      w.executor.running = []; w.executor.queue = [];
+      for (const t of tasks) {
+        const job = this.jobById(t.jobId);
+        if (t.status === 'RUNNING') t.attempts = Math.max(0, t.attempts - 1);
+        t.status = 'PENDING'; t.workerId = null; t.elapsed = 0; t.progress = 0; t.phase = null;
+        job.pending.unshift(t); job.inFlight--; this.counters.rescheduled++;
+      }
+      for (const b of w.cache.clear()) { const s = this.blockLocations.get(b); if (s) { s.delete(w.id); if (!s.size) this.blockLocations.delete(b); } }
+      w.online = false; w.status = 'OFFLINE';
+      this.emit('worker-offline', { worker: w, count: tasks.length });
+    } else {
+      w.online = true; w.status = this.started ? 'IDLE' : 'ONLINE';
+      this.emit('worker-online', { worker: w });
+    }
+  }
+  scaleWorkers(n) {
+    n = clamp(n, LIMITS.workers.min, LIMITS.workers.max);
+    while (this.cluster.workers.length < n) {
+      const w = new WorkerNode(this.cluster.workers.length + 1, this.cfg);
+      if (this.started) w.status = 'IDLE';
+      this.cluster.workers.push(w);
+      this.emit('worker-added', { worker: w });
+    }
+    while (this.cluster.workers.length > n) {
+      const w = this.cluster.workers[this.cluster.workers.length - 1];
+      this.setWorkerOnline(w, false);
+      this.cluster.workers.pop();
+      this.emit('worker-removed', { worker: w });
+    }
+    this.cfg.workers = n;
+  }
+  generateLoad(k) {
+    let tasks = 0;
+    for (let i = 0; i < k; i++) {
+      const u = this.users[this.jobSeq % this.users.length];
+      const j = this.createJob(u); tasks += j.tasks.length;
+      if (!u.current) { u.state = 'READY'; u.nextSubmitAt = Math.max(u.nextSubmitAt, this.time + this.rand(0, 0.6)); }
+    }
+    if (this.done) { this.done = false; this.endTime = null; }
+    this.emit('load-generated', { count: k, tasks });
+  }
+  summary() {
+    const m = this.metrics, c = this.counters;
+    const exec = this.endTime != null ? this.endTime : this.time;
+    return {
+      workers: this.cluster.workers.length, users: this.users.length, jobs: this.jobs.length, tasks: this.tasks.length,
+      completed: c.completed, failed: c.failed, retries: c.retries, rescheduled: c.rescheduled,
+      execTime: exec, avgTaskTime: m.n ? m.sumExec / m.n : 0, avgLatency: m.n ? m.sumLat / m.n : 0,
+      throughput: exec > 0 ? c.completed / exec : 0, hitRate: m.hitRate, hits: m.hits, misses: m.misses,
+      utilization: m.capCoreTime ? m.busyCoreTime / m.capCoreTime * 100 : 0,
+      reads: this.storage.reads, writes: this.storage.writes, peakThr: m.peakThr
+    };
+  }
+}
+
+// Ejecución sin interfaz para comparar escalabilidad
+function runHeadless(cfg) {
+  const e = new SimulationEngine(cfg, { seed: SEED });
+  let guard = 0;
+  while (!e.done && guard < 400000) { e.step(0.05); guard++; }
+  return e.summary();
+}
+
+/* =========================================================
+   5. GRÁFICAS (Canvas, sin librerías)
+   ========================================================= */
+function setupCanvas(c) {
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const w = c.clientWidth, h = c.clientHeight;
+  if (!w || !h) return null;
+  const W = Math.round(w * dpr), H = Math.round(h * dpr);
+  if (c.width !== W || c.height !== H) { c.width = W; c.height = H; }
+  const ctx = c.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  return { ctx, w, h };
+}
+function niceMax(v) {
+  if (v <= 0) return 1;
+  const p = Math.pow(10, Math.floor(Math.log10(v))), n = v / p;
+  return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10) * p;
+}
+function fmtAxis(v) { return v >= 1000 ? f1(v / 1000) + 'k' : v >= 10 || v === 0 ? String(Math.round(v)) : f1(v); }
+
+class LineChart {
+  constructor(canvas, opts) { this.c = canvas; this.o = Object.assign({ max: null, window: 180, unit: '' }, opts); }
+  draw(samples) {
+    const s = setupCanvas(this.c); if (!s) return;
+    const { ctx, w, h } = s, o = this.o;
+    const padL = 34, padR = 8, padT = 8, padB = 16, pw = w - padL - padR, ph = h - padT - padB;
+    const grid = cssVar('--grid'), faint = cssVar('--faint'), mono = cssVar('--mono');
+    const last = samples.length ? samples[samples.length - 1].t : 0;
+    const tMin = Math.max(0, last - o.window), tMax = Math.max(tMin + 30, last);
+    const data = samples.filter(p => p.t >= tMin);
+    let max = o.max;
+    if (max == null) { let m = 0; for (const p of data) for (const se of o.series) m = Math.max(m, p[se.key] || 0); max = niceMax(m * 1.1); }
+    ctx.font = '10px ' + mono; ctx.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) {
+      const y = Math.round(padT + ph - (i / 4) * ph) + 0.5;
+      ctx.strokeStyle = grid; ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(w - padR, y); ctx.stroke();
+      ctx.fillStyle = faint; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+      ctx.fillText(fmtAxis(max * i / 4) + o.unit, padL - 5, y);
+    }
+    ctx.textBaseline = 'alphabetic';
+    ctx.textAlign = 'left'; ctx.fillText(Math.round(tMin) + 's', padL, h - 3);
+    ctx.textAlign = 'right'; ctx.fillText(Math.round(tMax) + 's', w - padR, h - 3);
+    if (data.length < 2) {
+      ctx.textAlign = 'center'; ctx.fillStyle = faint; ctx.textBaseline = 'middle';
+      ctx.fillText('Esperando datos de la simulación…', padL + pw / 2, padT + ph / 2);
+      return;
+    }
+    const X = t => padL + (t - tMin) / (tMax - tMin) * pw;
+    const Y = v => padT + ph - clamp(v / max, 0, 1) * ph;
+    for (const se of o.series) {
+      const col = cssVar(se.color);
+      ctx.beginPath();
+      data.forEach((p, i) => { const x = X(p.t), y = Y(p[se.key] || 0); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+      ctx.strokeStyle = col; ctx.lineWidth = 1.8; ctx.lineJoin = 'round'; ctx.stroke();
+      if (se.area !== false) {
+        ctx.lineTo(X(data[data.length - 1].t), padT + ph); ctx.lineTo(X(data[0].t), padT + ph); ctx.closePath();
+        ctx.globalAlpha = 0.1; ctx.fillStyle = col; ctx.fill(); ctx.globalAlpha = 1;
+      }
+    }
+  }
+}
+
+class BarChart {
+  constructor(canvas, opts) { this.c = canvas; this.o = opts; }
+  draw(labels, values, offline) {
+    const s = setupCanvas(this.c); if (!s) return;
+    const { ctx, w, h } = s;
+    const padL = 30, padR = 6, padT = 12, padB = 16, pw = w - padL - padR, ph = h - padT - padB;
+    const grid = cssVar('--grid'), faint = cssVar('--faint'), mono = cssVar('--mono'), text = cssVar('--muted');
+    const base = cssVar(this.o.color), amber = cssVar('--amber'), red = cssVar('--red');
+    ctx.font = '10px ' + mono;
+    for (let i = 0; i <= 4; i++) {
+      const y = Math.round(padT + ph - (i / 4) * ph) + 0.5;
+      ctx.strokeStyle = grid; ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(w - padR, y); ctx.stroke();
+      if (i % 2 === 0) { ctx.fillStyle = faint; ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.fillText(i * 25 + '%', padL - 5, y); }
+    }
+    const n = values.length; if (!n) return;
+    const slot = pw / n, bw = Math.max(3, Math.min(42, slot * 0.62));
+    const every = n > 14 ? 2 : 1;
+    values.forEach((v, i) => {
+      const x = padL + slot * i + (slot - bw) / 2;
+      const bh = clamp(v / 100, 0, 1) * ph;
+      ctx.fillStyle = offline[i] ? faint : this.o.plain ? base : v >= 90 ? red : v >= 75 ? amber : base;
+      ctx.globalAlpha = offline[i] ? 0.35 : 1;
+      const y = padT + ph - bh;
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(x, y, bw, Math.max(bh, 1), [3, 3, 0, 0]); else ctx.rect(x, y, bw, Math.max(bh, 1));
+      ctx.fill(); ctx.globalAlpha = 1;
+      ctx.textAlign = 'center';
+      if (bw >= 20) { ctx.fillStyle = text; ctx.textBaseline = 'bottom'; ctx.fillText(offline[i] ? 'off' : Math.round(v), x + bw / 2, y - 1); }
+      if (i % every === 0) { ctx.fillStyle = faint; ctx.textBaseline = 'alphabetic'; ctx.fillText(labels[i], x + bw / 2, h - 3); }
+    });
+  }
+}
+
+const Charts = {
+  init() {
+    this.cpu = new BarChart($('#c-cpu'), { color: '--blue' });
+    this.mem = new BarChart($('#c-mem'), { color: '--violet' });
+    this.cache = new BarChart($('#c-cache'), { color: '--green', plain: true });
+    this.tasks = new LineChart($('#c-tasks'), { series: [{ key: 'completed', color: '--green' }, { key: 'pending', color: '--amber' }, { key: 'running', color: '--blue', area: false }] });
+    this.thr = new LineChart($('#c-thr'), { series: [{ key: 'throughput', color: '--accent' }] });
+    this.lat = new LineChart($('#c-lat'), { series: [{ key: 'latency', color: '--violet' }, { key: 'exec', color: '--blue', area: false }], unit: 's' });
+    this.hit = new LineChart($('#c-hit'), { series: [{ key: 'hitRate', color: '--green' }], max: 100, unit: '%' });
+    this.util = new LineChart($('#c-util'), { series: [{ key: 'cpu', color: '--blue' }, { key: 'mem', color: '--violet', area: false }], max: 100, unit: '%' });
+  },
+  draw() {
+    const e = App.engine, ws = e.cluster.workers, samples = e.metrics.samples;
+    const labels = ws.map(w => 'W' + pad(w.id)), off = ws.map(w => !w.online);
+    this.cpu.draw(labels, ws.map(w => w.cpuPct), off);
+    this.mem.draw(labels, ws.map(w => w.memPct), off);
+    this.cache.draw(labels, ws.map(w => w.cachePct), off);
+    this.tasks.draw(samples); this.thr.draw(samples); this.lat.draw(samples); this.hit.draw(samples); this.util.draw(samples);
+    const s = samples.length ? samples[samples.length - 1] : null;
+    const avg = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
+    const on = ws.filter(w => w.online);
+    $('#v-cpu').textContent = 'prom. ' + pct(avg(on.map(w => w.cpuPct)));
+    $('#v-mem').textContent = 'prom. ' + pct(avg(on.map(w => w.memPct)));
+    $('#v-cache').textContent = 'prom. ' + pct(avg(on.map(w => w.cachePct)));
+    $('#v-tasks').textContent = s ? `${s.completed} ✓ · ${s.pending} ⏳` : '0';
+    $('#v-thr').textContent = s ? f1(s.throughput) + ' t/s' : '0 t/s';
+    $('#v-lat').textContent = s ? f2(s.latency) + ' s' : '0 s';
+    $('#v-hit').textContent = s ? pct(s.hitRate) : '0%';
+    $('#v-util').textContent = s ? pct(s.cpu) : '0%';
+  }
+};
+
+/* =========================================================
+   6. RENDERER — refleja el estado del motor en el DOM
+   ========================================================= */
+const ICON_SERVER = '<svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 4h18v6H3zm0 10h18v6H3zM6 6v2h2V6zm0 10v2h2v-2z"/></svg>';
+const ICON_DB = '<svg width="11" height="11" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2c4.4 0 8 1.3 8 3v14c0 1.7-3.6 3-8 3s-8-1.3-8-3V5c0-1.7 3.6-3 8-3zm-6 6.2V12c0 .5 2.1 1.5 6 1.5s6-1 6-1.5V8.2C16.6 8.7 14.4 9 12 9s-4.6-.3-6-.8z"/></svg>';
+
+const Renderer = {
+  wrefs: [], builtFor: null, lastJobs: 0, lastHitWall: 0, lastMissWall: 0,
+  init() {
+    this.arch = $('#arch'); this.workersEl = $('#workers'); this.flyLayer = $('#flyLayer');
+    this.cmNode = $('#nCM'); this.logEl = $('#log');
+  },
+  setBar(el, v, hotAt) {
+    el.style.width = clamp(v, 0, 100).toFixed(1) + '%';
+    if (hotAt != null) el.classList.toggle('hot', v >= hotAt);
+  },
+  /* ---------- Workers ---------- */
+  buildWorkers() {
+    const e = App.engine;
+    this.workersEl.innerHTML = '';
+    this.wrefs = e.cluster.workers.map(w => {
+      const el = document.createElement('article');
+      el.className = 'worker st-' + w.status.toLowerCase();
+      el.tabIndex = 0; el.setAttribute('role', 'button'); el.dataset.id = w.id;
+      el.innerHTML = `
+        <div class="w-head"><span class="w-name">${ICON_SERVER}${w.name}</span><span class="pill ${w.status}">${w.status}</span></div>
+        <div class="exec">
+          <div class="exec-head"><span>EXECUTOR · ${w.cpuTotal}c</span><span class="cores">${'<i></i>'.repeat(w.cpuTotal)}</span></div>
+          <div class="meter cpu"><span>CPU</span><div class="bar"><i></i></div><b>0%</b></div>
+          <div class="meter mem"><span>MEM</span><div class="bar"><i></i></div><b>0%</b></div>
+          <div class="meter cache"><span>CACHE</span><div class="bar"><i></i></div><b>0 GB</b></div>
+          <div class="tasks"></div>
+        </div>
+        <div class="w-foot"><span class="hdfs-tag" title="Datos HDFS alojados en este nodo (réplicas)">${ICON_DB}RDD/HDFS <b></b></span><span class="w-tp">0.0 t/s</span></div>
+        <span class="io-flag"></span>`;
+      const open = () => UI.openWorker(w.id);
+      el.addEventListener('click', open);
+      el.addEventListener('keydown', ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); open(); } });
+      this.workersEl.appendChild(el);
+      const meters = el.querySelectorAll('.meter');
+      return {
+        id: w.id, el, status: w.status, pill: el.querySelector('.pill'),
+        cores: [...el.querySelectorAll('.cores i')],
+        cpu: meters[0], mem: meters[1], cache: meters[2],
+        cpuBar: meters[0].querySelector('i'), cpuTxt: meters[0].querySelector('b'),
+        memBar: meters[1].querySelector('i'), memTxt: meters[1].querySelector('b'),
+        cacheBar: meters[2].querySelector('i'), cacheTxt: meters[2].querySelector('b'),
+        tasks: el.querySelector('.tasks'), hdfs: el.querySelector('.hdfs-tag'), hdfsTxt: el.querySelector('.hdfs-tag b'),
+        tp: el.querySelector('.w-tp'), flag: el.querySelector('.io-flag'), lastFlag: 0, lastTasksHTML: ''
+      };
+    });
+    this.builtFor = e;
+    this.layoutWorkers();
+  },
+  layoutWorkers() {
+    const n = App.engine.cluster.workers.length;
+    const width = this.workersEl.clientWidth - 32;
+    const desired = n <= 5 ? n : n === 6 ? 3 : n <= 8 ? 4 : n <= 10 ? 5 : n <= 12 ? 4 : 5;
+    const minW = n > 10 ? 170 : 200;
+    const maxCols = Math.max(1, Math.floor((width + 12) / (minW + 12)));
+    const cols = Math.max(1, Math.min(desired, maxCols));
+    this.workersEl.style.setProperty('--cols', cols);
+    this.workersEl.classList.toggle('compact', n > 10 || cols >= 5);
+  },
+  taskChips(w, e) {
+    const max = this.workersEl.classList.contains('compact') ? 3 : 4;
+    const items = [];
+    const run = w.running.slice().sort((a, b) => a.startAt - b.startAt);
+    for (const t of run) {
+      let cls = 'run', lbl = 'RUNNING';
+      if (t.phase === 'read') {
+        if (t.stage === 0) { cls = t.cacheHit ? 'hit' : 'read'; lbl = t.cacheHit ? 'CACHE HIT' : 'HDFS READ'; }
+        else { cls = 'read'; lbl = 'SHUFFLE'; }
+      }
+      const p = Math.round(t.progress * 100);
+      items.push(`<div class="tchip ${cls}" title="${t.name} · J-${pad(t.jobId, 3)} · stage ${t.stage} · ${t.locality}"><span>${t.name}</span><span class="tj">S${t.stage}</span><em>${lbl} ${p}%</em><i class="pg" style="width:${p}%"></i></div>`);
+    }
+    const keep = 0.7 * App.speed;
+    for (let i = w.recentDone.length - 1; i >= 0; i--) {
+      const r = w.recentDone[i];
+      if (r.at < e.time - keep) continue;
+      const ok = r.status === 'COMPLETED';
+      items.push(`<div class="tchip ${ok ? 'done' : 'fail'}"><span>${r.task.name}</span><span class="tj">S${r.task.stage}</span><em>${ok ? '✓ COMPLETED' : '✗ FAILED'}</em></div>`);
+    }
+    for (const t of w.queue) {
+      items.push(`<div class="tchip wait"><span>${t.name}</span><span class="tj">S${t.stage}</span><em>${t.status === 'ASSIGNED' ? 'DISPATCH' : 'WAITING'}</em></div>`);
+    }
+    if (!items.length) return `<div class="tempty">${w.online ? 'sin tasks' : 'nodo fuera de servicio'}</div>`;
+    const extra = items.length - max;
+    return items.slice(0, max).join('') + (extra > 0 ? `<div class="tmore">+${extra} tasks más</div>` : '');
+  },
+  renderWorkers() {
+    const e = App.engine;
+    if (this.builtFor !== e || this.wrefs.length !== e.cluster.workers.length) this.buildWorkers();
+    const ds = e.storage.datasetGB, n = e.cluster.workers.length;
+    const localGB = ds * Math.min(SIM.REPLICATION, n) / n;
+    e.cluster.workers.forEach((w, i) => {
+      const r = this.wrefs[i];
+      if (r.status !== w.status) {
+        r.status = w.status;
+        r.el.className = 'worker st-' + w.status.toLowerCase();
+        r.pill.className = 'pill ' + w.status; r.pill.textContent = w.status;
+      }
+      r.el.setAttribute('aria-label', `${w.name}, estado ${w.status}, CPU ${Math.round(w.cpuPct)}%, memoria ${Math.round(w.memPct)}%. Abrir detalle.`);
+      let comp = 0, io = 0;
+      for (const t of w.running) t.phase === 'read' ? io++ : comp++;
+      r.cores.forEach((c, k) => { c.className = k < comp ? 'on' : k < comp + io ? 'io' : ''; });
+      this.setBar(r.cpuBar, w.cpuPct, 101); r.cpuTxt.textContent = pct(w.cpuPct);
+      this.setBar(r.memBar, w.memPct, 92); r.memTxt.textContent = pct(w.memPct);
+      this.setBar(r.cacheBar, w.cachePct); r.cacheTxt.textContent = `${f1(w.cache.usedGB)}/${w.cache.capacityGB} GB`;
+      const html = this.taskChips(w, e);
+      if (html !== r.lastTasksHTML) { r.tasks.innerHTML = html; r.lastTasksHTML = html; }
+      r.hdfsTxt.textContent = (localGB >= 100 ? Math.round(localGB) : f1(localGB)) + ' GB';
+      r.tp.textContent = `${f1(w.throughput(e.time))} t/s · ✓${w.completed}`;
+    });
+  },
+  /* ---------- Nodos superiores ---------- */
+  renderNodes() {
+    const e = App.engine;
+    const active = e.users.filter(u => u.state === 'RUNNING').length;
+    $('#uActive').textContent = `${active} / ${e.users.length}`;
+    $('#uSent').textContent = e.users.reduce((s, u) => s + u.submitted, 0);
+    const chips = $('#uChips');
+    if (chips.children.length !== e.users.length) {
+      chips.innerHTML = e.users.map(u => `<span class="uchip" data-u="${u.id}">U${pad(u.id)}</span>`).join('');
+    }
+    e.users.forEach((u, i) => {
+      const c = chips.children[i];
+      const cls = 'uchip ' + u.state + (c.classList.contains('flash') ? ' flash' : '');
+      if (c.className !== cls) c.className = cls;
+      c.title = `${u.name} · ${u.state}${u.current ? ' · ' + u.current.name : ''} · ${u.queue.length} jobs en espera`;
+    });
+    const stagesDone = e.jobs.reduce((s, j) => s + (j.status === 'COMPLETED' || j.status === 'FAILED' ? j.stages.length : Math.max(0, j.currentStage)), 0);
+    $('#dJobs').textContent = e.jobs.length;
+    $('#dActive').textContent = e.cm.activeJobs.length;
+    $('#dStages').textContent = `${stagesDone} / ${e.jobs.length * 3}`;
+    $('#dTasks').textContent = e.tasks.length;
+    $('#dStatus').textContent = App.state === 'ONLINE' ? 'IDLE' : App.state;
+    const on = e.cluster.online();
+    const cores = e.cluster.totalCores(), used = e.cm.usedCores();
+    $('#cmWorkers').textContent = `${on.length} / ${e.cluster.workers.length}`;
+    $('#cmAvail').textContent = Math.max(0, cores - used);
+    $('#cmUsed').textContent = `${used} / ${cores}`;
+    $('#cmPending').textContent = e.cm.pendingCount();
+    $('#cmDispatch').textContent = e.cm.dispatching();
+    $('#hData').textContent = e.storage.datasetGB + ' GB';
+    $('#hBlocks').textContent = e.storage.blocks.toLocaleString('es-CO');
+    $('#hReads').textContent = e.storage.reads.toLocaleString('es-CO');
+    $('#hWrites').textContent = e.storage.writes.toLocaleString('es-CO');
+    $('#hCached').textContent = e.blockLocations.size.toLocaleString('es-CO');
+    $('#busLabel').textContent = `TASK DISPATCH → ${on.length} EXECUTORS · ${cores} SLOTS`;
+  },
+  renderTop() {
+    const e = App.engine;
+    const t = e.time, m = Math.floor(t / 60), s = t - m * 60;
+    $('#clock').textContent = `T+ ${pad(m)}:${s < 10 ? '0' : ''}${f1(s)}`;
+    const running = e.cm.usedCores() > 0, now = performance.now();
+    const on = {
+      user: e.users.some(u => u.state === 'RUNNING'),
+      driver: e.cm.activeJobs.length > 0,
+      cm: e.cm.pendingCount() + e.cm.dispatching() > 0,
+      workers: running, exec: running, tasks: running,
+      cache: now - this.lastHitWall < 900, hdfs: now - this.lastMissWall < 900
+    };
+    document.querySelectorAll('.pipe-step').forEach(el => el.classList.toggle('on', App.state === 'RUNNING' && !!on[el.dataset.p]));
+    $('#btnStart').disabled = App.state === 'RUNNING';
+    $('#btnPause').disabled = App.state !== 'RUNNING';
+    $('#btnStart').innerHTML = App.state === 'PAUSED' ? '▶ RESUME' : App.state === 'COMPLETED' ? '▶ RUN AGAIN' : '▶ START SIMULATION';
+  },
+  renderKpis() {
+    const e = App.engine, ws = e.cluster.workers, on = e.cluster.online();
+    const cores = e.cluster.totalCores(), ram = on.reduce((s, w) => s + w.memoryTotal, 0);
+    $('#kWorkers').innerHTML = on.length === ws.length ? String(ws.length) : `${on.length}<small>/${ws.length}</small>`;
+    $('#kWorkersSub').textContent = `${cores} cores · ${ram} GB RAM`;
+    const active = e.users.filter(u => u.state === 'RUNNING').length;
+    $('#kUsers').textContent = e.users.length;
+    $('#kUsersSub').textContent = `${active} con jobs activos`;
+    const running = e.cm.usedCores(), pending = e.cm.pendingCount() + e.cm.queued();
+    $('#kTasks').textContent = e.tasks.length;
+    $('#kTasksSub').textContent = `✓ ${e.counters.completed} · ▶ ${running} · ⏳ ${pending}`;
+    let used = 0, memU = 0, memT = 0;
+    for (const w of on) { used += w.cpuUsed; memU += Math.min(w.memoryUsedRaw, w.memoryTotal); memT += w.memoryTotal; }
+    const cpu = cores ? used / cores * 100 : 0, mem = memT ? memU / memT * 100 : 0;
+    $('#kCpu').textContent = pct(cpu); this.setBar($('#kCpuBar'), cpu);
+    $('#kCpuSub').textContent = `${running} / ${cores} cores ocupados`;
+    $('#kMem').textContent = pct(mem); this.setBar($('#kMemBar'), mem);
+    $('#kMemBar').style.background = mem >= 90 ? 'var(--red)' : 'var(--violet)';
+    $('#kMemSub').textContent = `${f1(memU)} / ${memT} GB`;
+    const thr = e.metrics.throughput(e.time);
+    $('#kThr').innerHTML = `${f1(thr)}<small>t/s</small>`;
+    $('#kThrSub').textContent = `pico ${f1(e.metrics.peakThr)} t/s`;
+    $('#kHit').textContent = pct(e.metrics.hitRate);
+    $('#kHitSub').textContent = `${e.metrics.hits} hits · ${e.metrics.misses} misses`;
+    $('#kTime').innerHTML = `${f1(e.time)}<small>s</small>`;
+    $('#kTimeSub').textContent = `velocidad ${App.speed}x`;
+  },
+  /* ---------- Jobs ---------- */
+  renderJobs() {
+    const e = App.engine;
+    const rows = e.jobs.map(j => {
+      const total = j.tasks.length, prog = (j.done + j.failed) / total * 100;
+      const dur = j.submitAt == null ? '—' : f1((j.endAt != null ? j.endAt : e.time) - j.submitAt) + ' s';
+      const stage = j.status === 'QUEUED' ? '—' : j.status === 'RUNNING' ? `S${j.currentStage} · ${SIM.STAGE_NAMES[j.currentStage]}` : '3/3';
+      return `<tr><td>${j.name}</td><td>USER ${pad(j.userId)}</td><td><div class="jprog"><div class="bar"><i style="width:${prog.toFixed(0)}%"></i></div>${j.done + j.failed}/${total}</div></td><td>${stage}</td><td><span class="badge ${j.status}">${j.status}</span></td><td>${dur}</td></tr>`;
+    }).join('');
+    $('#jobsBody').innerHTML = rows || '<tr><td colspan="6" class="empty">Sin jobs</td></tr>';
+    const c = { QUEUED: 0, RUNNING: 0, COMPLETED: 0, FAILED: 0 };
+    e.jobs.forEach(j => c[j.status]++);
+    $('#jobsSummary').textContent = `${c.RUNNING} running · ${c.QUEUED} queued · ${c.COMPLETED} done${c.FAILED ? ' · ' + c.FAILED + ' failed' : ''}`;
+  },
+  /* ---------- Performance ---------- */
+  renderPerf() {
+    const s = App.engine.summary();
+    $('#p-exec').textContent = f1(s.execTime) + ' s';
+    $('#p-exec-s').textContent = App.state === 'COMPLETED' ? 'ejecución finalizada' : 'en curso';
+    $('#p-avg').textContent = f2(s.avgTaskTime) + ' s';
+    $('#p-thr').textContent = f1(s.throughput) + ' t/s';
+    $('#p-thr-s').textContent = `pico ${f1(s.peakThr)} t/s`;
+    $('#p-util').textContent = pct(s.utilization);
+    $('#p-hit').textContent = pct(s.hitRate);
+    $('#p-hit-s').textContent = `${s.hits} hits · ${s.misses} misses`;
+    $('#p-done').textContent = s.completed;
+    $('#p-done-s').textContent = `de ${s.tasks} tasks`;
+    $('#p-fail').textContent = s.failed;
+    $('#p-fail').className = s.failed ? 'bad' : '';
+    $('#p-fail-s').textContent = `${s.retries} reintentos · ${s.rescheduled} reasignadas`;
+    $('#p-lat').textContent = f2(s.avgLatency) + ' s';
+  },
+  /* ---------- Eventos ---------- */
+  pulse(id) { const el = $(id); el.classList.remove('pulse'); void el.offsetWidth; el.classList.add('pulse'); },
+  flashUser(uid) {
+    const c = document.querySelector(`.uchip[data-u="${uid}"]`); if (!c) return;
+    c.classList.remove('flash'); void c.offsetWidth; c.classList.add('flash');
+    setTimeout(() => c.classList.remove('flash'), 700);
+  },
+  ref(workerId) { return this.wrefs.find(r => r.id === workerId); },
+  flag(worker, kind) {
+    const r = this.ref(worker.id); if (!r) return;
+    const now = performance.now();
+    if (now - r.lastFlag < 280) return;
+    r.lastFlag = now;
+    r.flag.className = 'io-flag'; void r.flag.offsetWidth;
+    r.flag.className = 'io-flag ' + kind;
+    r.flag.textContent = kind === 'hit' ? 'CACHE HIT' : 'CACHE MISS → HDFS';
+    const target = kind === 'hit' ? r.cache : r.hdfs;
+    const cls = 'flash';
+    target.classList.remove(cls); void target.offsetWidth; target.classList.add(cls);
+  },
+  fly(task, worker) {
+    const r = this.ref(worker.id);
+    if (!r || typeof r.el.animate !== 'function') return;
+    const a = this.arch.getBoundingClientRect(), s = this.cmNode.getBoundingClientRect(), d = r.el.getBoundingClientRect();
+    if (!d.width) return;
+    const x0 = s.left + s.width / 2 - a.left, y0 = s.bottom - a.top - 4;
+    const x1 = d.left + d.width / 2 - a.left, y1 = d.top - a.top + 16;
+    const el = document.createElement('div');
+    el.className = 'fly'; el.innerHTML = `<span>${task.name}</span>`;
+    this.flyLayer.appendChild(el);
+    const dur = clamp(760 / App.speed, 260, 820);
+    const anim = el.animate([
+      { transform: `translate(${x0}px,${y0}px) scale(.6)`, opacity: 0 },
+      { transform: `translate(${x0}px,${y0 + 16}px) scale(1)`, opacity: 1, offset: 0.15 },
+      { transform: `translate(${x1}px,${y1}px) scale(1)`, opacity: 1, offset: 0.88 },
+      { transform: `translate(${x1}px,${y1}px) scale(.7)`, opacity: 0 }
+    ], { duration: dur, easing: 'cubic-bezier(.45,0,.25,1)' });
+    anim.onfinish = () => {
+      el.remove();
+      if (this.wrefs.includes(r)) { r.el.classList.remove('recv'); void r.el.offsetWidth; r.el.classList.add('recv'); }
+    };
+    anim.oncancel = () => el.remove();
+  },
+  processEvents() {
+    const q = App.evq; App.evq = [];
+    if (!q.length) return;
+    const logs = []; let anims = 0;
+    const L = (t, type, msg) => logs.push({ t, type, msg });
+    for (const { type, d, t } of q) {
+      switch (type) {
+        case 'job-submit':
+          L(t, 'JOB', `${d.job.name} enviado por ${d.user.name} · ${d.job.tasks.length} tasks en 3 stages`);
+          this.pulse('#nUsers'); this.pulse('#nDriver'); this.flashUser(d.user.id); break;
+        case 'stage-submit':
+          L(t, 'STAGE', `${d.job.name} · Stage ${d.stage} (${SIM.STAGE_NAMES[d.stage]}) → ${d.count} tasks a la cola`);
+          this.pulse('#nCM'); break;
+        case 'task-assign':
+          L(t, 'TASK', `${d.task.name} asignada a ${d.worker.name} (${d.locality})`);
+          if (anims < 14 && this.flyLayer.childElementCount < 22) { this.fly(d.task, d.worker); anims++; }
+          break;
+        case 'cache-hit':
+          L(t, 'CACHE', `Cache HIT en ${d.worker.name} · bloque #${d.task.blockId} (${d.task.name})`);
+          this.flag(d.worker, 'hit'); this.lastHitWall = performance.now(); break;
+        case 'cache-miss':
+          L(t, 'HDFS', `Cache MISS en ${d.worker.name} · bloque #${d.task.blockId} leído desde HDFS ${d.local ? '(réplica local)' : '(remoto)'}`);
+          this.flag(d.worker, 'miss'); this.lastMissWall = performance.now(); this.pulse('#nHDFS'); break;
+        case 'task-complete':
+          L(t, 'TASK', `${d.task.name} completada en ${d.worker.name} (${f2(d.task.endAt - d.task.startAt)} s)`); break;
+        case 'task-retry':
+          L(t, 'WARN', `${d.task.name} falló en ${d.worker.name}: ${d.reason} → reintento`); break;
+        case 'task-failed':
+          L(t, 'ERROR', `${d.task.name} FAILED tras ${SIM.MAX_ATTEMPTS} intentos (${d.reason})`); break;
+        case 'worker-overloaded':
+          L(t, 'WARN', `${d.worker.name} sobrecargado · CPU ${pct(d.worker.cpuPct)} · MEM ${pct(d.worker.memPct)} · ${d.worker.queue.length} en cola`); break;
+        case 'worker-offline':
+          L(t, 'ERROR', `${d.worker.name} OFFLINE · ${d.count} tasks devueltas a la cola · caché perdida`); break;
+        case 'worker-online':
+          L(t, 'WORKER', `${d.worker.name} reconectado y disponible`); break;
+        case 'worker-added':
+          L(t, 'WORKER', `${d.worker.name} agregado al clúster (escalado en caliente)`); break;
+        case 'worker-removed':
+          L(t, 'WORKER', `${d.worker.name} retirado del clúster`); break;
+        case 'job-complete':
+          L(t, 'JOB', `${d.job.name} ${d.job.status === 'FAILED' ? 'terminó con ' + d.job.failed + ' tasks fallidas' : 'completado'} en ${f1(d.job.endAt - d.job.submitAt)} s`); break;
+        case 'load-generated':
+          L(t, 'SYS', `Carga adicional: ${d.count} jobs (${d.tasks} tasks) encolados`); break;
+        case 'sim-complete':
+          L(t, 'SYS', `Simulación completada en ${f1(d.execTime)} s · ${d.completed}/${d.tasks} tasks`); break;
+        case 'sample':
+          App.chartsDirty = true; break;
+      }
+    }
+    this.appendLogs(logs);
+  },
+  logMatches(type) {
+    const f = App.logFilter;
+    if (f === 'all') return true;
+    return ({ job: ['JOB', 'STAGE'], task: ['TASK'], cache: ['CACHE', 'HDFS'], worker: ['WORKER'], alert: ['WARN', 'ERROR'] })[f].includes(type);
+  },
+  logRow(en) {
+    const row = document.createElement('div');
+    row.className = 'log-row ' + en.type;
+    row.innerHTML = `<time>${en.label}</time><span class="t ${en.type}">${en.type}</span><span class="m"></span>`;
+    row.lastChild.textContent = en.msg;
+    return row;
+  },
+  appendLogs(entries) {
+    if (!entries.length) return;
+    for (const en of entries) { en.label = clockLabel(en.t); App.logs.push(en); }
+    if (App.logs.length > 800) App.logs.splice(0, App.logs.length - 800);
+    const vis = entries.filter(en => this.logMatches(en.type));
+    if (vis.length) {
+      const empty = this.logEl.querySelector('.empty'); if (empty) empty.remove();
+      const frag = document.createDocumentFragment();
+      for (let i = vis.length - 1; i >= 0; i--) frag.appendChild(this.logRow(vis[i]));
+      this.logEl.insertBefore(frag, this.logEl.firstChild);
+      while (this.logEl.children.length > 250) this.logEl.lastChild.remove();
+    }
+    $('#logCount').textContent = App.logs.length + ' eventos';
+  },
+  rebuildLogs() {
+    this.logEl.innerHTML = '';
+    const vis = App.logs.filter(en => this.logMatches(en.type)).slice(-250).reverse();
+    if (!vis.length) { this.logEl.innerHTML = '<div class="empty">Sin eventos todavía</div>'; }
+    else { const frag = document.createDocumentFragment(); vis.forEach(en => frag.appendChild(this.logRow(en))); this.logEl.appendChild(frag); }
+    $('#logCount').textContent = App.logs.length + ' eventos';
+  },
+  /* ---------- Ciclo de render ---------- */
+  render() {
+    const now = performance.now();
+    this.processEvents();
+    this.renderTop();
+    this.renderKpis();
+    this.renderNodes();
+    this.renderWorkers();
+    if (now - this.lastJobs > 300) { this.lastJobs = now; this.renderJobs(); }
+    this.renderPerf();
+    if (App.chartsDirty) { App.chartsDirty = false; Charts.draw(); }
+    if (App.openWorkerId != null) UI.renderWorkerModal();
+  }
+};
+
+function clockLabel(t) {
+  const d = new Date(App.wallBase + t * 1000);
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
+/* =========================================================
+   7. UI CONTROLLER — controles, modales, escenarios, benchmark
+   ========================================================= */
+const App = {
+  cfg: null, draft: null, engine: null, state: 'ONLINE', speed: 1,
+  wallBase: Date.now(), logs: [], logFilter: 'all', evq: [],
+  openWorkerId: null, chartsDirty: true, history: [], bench: null,
+  lastRender: 0, lastFrame: 0, recorded: false
+};
+
+const UI = {
+  init() {
+    this.bindControls();
+    this.bindConfig();
+    this.bindModals();
+    window.addEventListener('resize', () => { Renderer.layoutWorkers(); App.chartsDirty = true; });
+  },
+  setState(s) {
+    App.state = s;
+    const pill = $('#statusPill');
+    pill.className = 'status ' + s.toLowerCase();
+    pill.lastChild.textContent = s;
+    $('#arch').classList.toggle('live', s === 'RUNNING');
+    $('#btnStart').classList.toggle('attn', s === 'ONLINE');
+  },
+  log(type, msg) { Renderer.appendLogs([{ t: App.engine ? App.engine.time : 0, type, msg }]); },
+  newEngine() {
+    App.engine = new SimulationEngine(App.cfg, { seed: SEED, hooks: { onEvent: (type, d, t) => App.evq.push({ type, d, t }) } });
+    App.evq = []; App.recorded = false; App.wallBase = Date.now();
+    Renderer.flyLayer.replaceChildren();
+    this.closeModal('#doneModal');
+    if (App.openWorkerId != null) this.closeModal('#wModal');
+    this.setState('ONLINE');
+    Renderer.buildWorkers();
+    App.chartsDirty = true;
+    Renderer.lastJobs = 0;
+    Renderer.render();
+    this.scheduleBenchmark();
+  },
+  start() {
+    if (App.engine.done) this.newEngine();
+    if (!App.engine.started) this.log('SYS', `Simulación iniciada · ${App.cfg.workers} workers, ${App.cfg.users} usuarios, ${App.engine.tasks.length} tasks`);
+    else this.log('SYS', 'Simulación reanudada');
+    this.setState('RUNNING');
+  },
+  pause() { if (App.state === 'RUNNING') { this.setState('PAUSED'); this.log('SYS', 'Simulación en pausa'); } },
+  reset() { this.newEngine(); this.log('SYS', 'Clúster reiniciado'); },
+  complete() {
+    this.setState('COMPLETED');
+    Renderer.render();
+    if (!App.recorded) {
+      App.recorded = true;
+      const s = App.engine.summary();
+      App.history.push({ ...s, at: Date.now() });
+      if (App.history.length > 12) App.history.shift();
+      Store.set('history', App.history);
+      this.renderHistory();
+      setTimeout(() => this.showDone(s), 450);
+    }
+  },
+  bindControls() {
+    $('#btnStart').addEventListener('click', () => this.start());
+    $('#btnPause').addEventListener('click', () => this.pause());
+    $('#btnReset').addEventListener('click', () => this.reset());
+    $('#btnLoad').addEventListener('click', () => {
+      const k = Math.max(3, Math.ceil(App.cfg.users / 2));
+      App.engine.generateLoad(k);
+      App.recorded = false;
+      if (App.state === 'COMPLETED' || App.state === 'ONLINE') this.setState('RUNNING');
+      Renderer.lastJobs = 0;
+    });
+    $('#btnClear').addEventListener('click', () => { App.logs = []; Renderer.rebuildLogs(); });
+    const sp = $('#speed');
+    const setSpeed = idx => {
+      App.speed = SPEEDS[idx]; sp.value = idx;
+      $('#speedVal').textContent = App.speed + 'x';
+      sp.setAttribute('aria-valuetext', App.speed + 'x');
+      Store.set('speedIdx', idx);
+    };
+    sp.addEventListener('input', () => setSpeed(Number(sp.value)));
+    setSpeed(clamp(Number(Store.get('speedIdx', 1)) || 0, 0, 3));
+    $('#logFilter').addEventListener('change', ev => { App.logFilter = ev.target.value; Renderer.rebuildLogs(); });
+    $('#themeBtn').addEventListener('click', () => {
+      const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+      applyTheme(next); Store.set('theme', next); App.chartsDirty = true;
+    });
+    $('#btnBench').addEventListener('click', () => this.runBenchmark());
+    $('#btnClearHist').addEventListener('click', () => { App.history = []; Store.set('history', []); this.renderHistory(); });
+    document.querySelectorAll('.scn').forEach(b => b.addEventListener('click', () => this.applyScenario(b.dataset.s)));
+  },
+  /* ---------- Configuración ---------- */
+  // Ajusta un parámetro respetando límites y la relación caché ≤ RAM/2. Devuelve true si hubo que corregir el valor.
+  setDraft(key, raw) {
+    const L = LIMITS[key];
+    let v = Math.round(Number(raw));
+    if (!isFinite(v)) v = App.draft[key];
+    let fixed = clamp(v, L.min, L.max);
+    if (key === 'cacheGB') fixed = Math.min(fixed, Math.max(1, Math.floor(App.draft.ramGB / 2)));
+    App.draft[key] = fixed;
+    if (key === 'ramGB') App.draft.cacheGB = Math.min(App.draft.cacheGB, Math.max(1, Math.floor(fixed / 2)));
+    return fixed !== v;
+  },
+  flashClamped(el, key) {
+    const L = LIMITS[key];
+    el.classList.remove('clamped'); void el.offsetWidth; el.classList.add('clamped');
+    const max = key === 'cacheGB' ? Math.max(1, Math.floor(App.draft.ramGB / 2)) : L.max;
+    this.log('SYS', `Valor fuera de rango: ${key === 'cacheGB' ? 'la caché admite' : 'se admite'} de ${L.min} a ${max}${L.unit}. Se ajustó a ${App.draft[key]}${L.unit}.`);
+  },
+  bindNumber(input, key, wrap) {
+    const L = LIMITS[key];
+    input.min = L.min; input.max = L.max;
+    input.title = `Escribe un valor entre ${L.min} y ${L.max}${L.unit}`;
+    // Mientras escribe: si el número ya es válido se refleja en el resumen sin reescribir el campo
+    input.addEventListener('input', () => {
+      const v = Number(input.value);
+      if (input.value !== '' && Number.isInteger(v) && v >= L.min && v <= L.max) { this.setDraft(key, v); this.updateConfigUI(); }
+    });
+    const commit = () => {
+      if (input.value === '') { this.updateConfigUI(true); return; }
+      if (this.setDraft(key, input.value)) this.flashClamped(wrap, key);
+      this.updateConfigUI(true);
+    };
+    input.addEventListener('change', commit);
+    input.addEventListener('blur', commit);
+    input.addEventListener('keydown', ev => {
+      if (ev.key === 'Enter') { ev.preventDefault(); commit(); input.select(); }
+      if (ev.key === 'Escape') { input.value = App.draft[key]; input.blur(); }
+    });
+    input.addEventListener('focus', () => input.select());
+  },
+  bindConfig() {
+    document.querySelectorAll('.stepper').forEach(st => {
+      const key = st.dataset.key, L = LIMITS[key];
+      const wrap = st.querySelector('.num'), input = wrap.querySelector('input');
+      wrap.querySelector('em').textContent = L.unit.trim();
+      wrap.classList.toggle('nounit', !L.unit.trim());
+      input.setAttribute('aria-label', st.closest('.field').querySelector('label').firstChild.textContent.trim());
+      this.bindNumber(input, key, wrap);
+      st.querySelectorAll('button').forEach(btn => btn.addEventListener('click', () => {
+        const d = Number(btn.dataset.d), cur = App.draft[key];
+        // salta al siguiente múltiplo del paso (p. ej. RAM 10 → 12 / 8)
+        const v = d > 0 ? Math.floor(cur / L.step) * L.step + L.step : Math.ceil(cur / L.step) * L.step - L.step;
+        this.setDraft(key, v);
+        this.updateConfigUI(true);
+      }));
+    });
+    const ds = $('#dataset');
+    ds.addEventListener('input', () => { App.draft.datasetGB = Number(ds.value); this.updateConfigUI(true); });
+    const dn = $('#datasetNum');
+    this.bindNumber(dn, 'datasetGB', dn.parentElement);
+    $('#btnApply').addEventListener('click', () => { const f = document.activeElement; if (f && f.matches && f.matches('.num input')) f.blur(); this.applyConfig(); });
+  },
+  updateConfigUI(force) {
+    const d = App.draft, c = App.cfg;
+    document.querySelectorAll('.stepper').forEach(st => {
+      const k = st.dataset.key, input = st.querySelector('input');
+      if (force || document.activeElement !== input) input.value = d[k];
+      st.classList.toggle('changed', d[k] !== c[k]);
+    });
+    $('#dataset').value = d.datasetGB;
+    if (force || document.activeElement !== $('#datasetNum')) $('#datasetNum').value = d.datasetGB;
+    $('#datasetField').classList.toggle('changed', d.datasetGB !== c.datasetGB);
+    const blocks = Math.ceil(d.datasetGB / SIM.BLOCK_GB);
+    $('#cfgSummary').textContent = `${d.jobs * d.tasksPerJob} tasks · ${d.workers * d.cores} cores · ${d.workers * d.ramGB} GB RAM · ${blocks} bloques`;
+    const changes = Object.keys(LIMITS).filter(k => d[k] !== c[k]).length;
+    const btn = $('#btnApply');
+    btn.textContent = changes ? `APPLY CONFIGURATION (${changes})` : 'APPLY CONFIGURATION';
+    btn.classList.toggle('attn', changes > 0);
+  },
+  applyConfig() {
+    const d = normalizeCfg(App.draft);
+    const diff = Object.keys(LIMITS).filter(k => d[k] !== App.cfg[k]);
+    if (!diff.length) { this.log('SYS', 'La configuración no tiene cambios'); return; }
+    const e = App.engine;
+    document.querySelectorAll('.scn').forEach(b => b.classList.remove('active'));
+    if (e.started && !e.done && diff.length === 1 && diff[0] === 'workers') {
+      const from = App.cfg.workers;
+      App.cfg = d;
+      e.scaleWorkers(d.workers);
+      this.log('SYS', `Escalado en caliente: ${from} → ${d.workers} workers`);
+      this.scheduleBenchmark();
+    } else {
+      App.cfg = d;
+      this.newEngine();
+      this.log('SYS', `Configuración aplicada: ${d.workers} workers × ${d.cores} cores / ${d.ramGB} GB, ${d.users} usuarios, ${d.jobs} jobs × ${d.tasksPerJob} tasks, caché ${d.cacheGB} GB, dataset ${d.datasetGB} GB`);
+    }
+    Store.set('cfg', App.cfg);
+    App.draft = { ...App.cfg };
+    this.updateConfigUI(true);
+  },
+  applyScenario(key) {
+    const sc = SCENARIOS[key];
+    App.cfg = normalizeCfg(sc.cfg);
+    App.draft = { ...App.cfg };
+    Store.set('cfg', App.cfg);
+    this.newEngine();
+    this.updateConfigUI(true);
+    document.querySelectorAll('.scn').forEach(b => b.classList.toggle('active', b.dataset.s === key));
+    this.log('SYS', `Escenario ${sc.name}: ${App.cfg.workers} workers, ${App.cfg.users} usuarios, ${App.cfg.jobs} jobs, ${App.engine.tasks.length} tasks. Pulsa START.`);
+  },
+  /* ---------- Benchmark de escalabilidad ---------- */
+  scheduleBenchmark() {
+    clearTimeout(this._benchT);
+    this._benchT = setTimeout(() => this.runBenchmark(), 120);
+  },
+  runBenchmark() {
+    const btn = $('#btnBench');
+    btn.disabled = true; btn.textContent = 'Calculando…';
+    setTimeout(() => {
+      const cfg = { ...App.cfg };
+      const counts = [...new Set([3, 6, 10, cfg.workers])].sort((a, b) => a - b);
+      const res = counts.map(n => runHeadless({ ...cfg, workers: n }));
+      App.bench = { cfg, res };
+      this.renderBench();
+      btn.disabled = false; btn.textContent = '▶ Recalcular comparación';
+    }, 30);
+  },
+  renderBench() {
+    const b = App.bench; if (!b) return;
+    const { cfg, res } = b, base = res[0];
+    const maxT = Math.max(...res.map(r => r.execTime));
+    $('#benchDesc').textContent = `Misma carga (${cfg.jobs} jobs × ${cfg.tasksPerJob} tasks, ${cfg.users} usuarios, ${cfg.cores} cores y ${cfg.ramGB} GB por worker) ejecutada en modo acelerado.`;
+    $('#benchBars').innerHTML = res.map(r => `<div class="bbar ${r.workers === App.cfg.workers ? 'cur' : ''}"><span>${r.workers} workers${r.workers === App.cfg.workers ? ' ●' : ''}</span><div class="track"><i style="width:${(r.execTime / maxT * 100).toFixed(1)}%"></i></div><b>${f1(r.execTime)} s</b></div>`).join('');
+    $('#benchBody').innerHTML = res.map(r => {
+      const sp = base.execTime / r.execTime, eff = sp / (r.workers / base.workers) * 100;
+      return `<tr class="${r.workers === App.cfg.workers ? 'cur' : ''}"><td>${r.workers}</td><td>${f1(r.execTime)} s</td><td>${f2(sp)}×</td><td>${Math.round(eff)}%</td><td>${f1(r.throughput)}</td><td>${pct(r.utilization)}</td><td>${pct(r.hitRate)}</td></tr>`;
+    }).join('');
+    $('#benchInsight').innerHTML = scalingInsight(cfg, res);
+  },
+  renderHistory() {
+    const h = App.history;
+    $('#histBody').innerHTML = h.length ? h.slice().reverse().map((r, i) => `<tr><td>${h.length - i}</td><td>${r.workers}</td><td>${r.users}</td><td>${r.tasks}</td><td>${f1(r.execTime)} s</td><td>${f1(r.throughput)}</td><td>${pct(r.hitRate)}</td><td>${pct(r.utilization)}</td><td>${r.failed}</td></tr>`).join('')
+      : '<tr><td colspan="9" class="empty">Las ejecuciones completadas aparecerán aquí</td></tr>';
+  },
+  /* ---------- Modales ---------- */
+  bindModals() {
+    document.querySelectorAll('.backdrop').forEach(bd => {
+      bd.addEventListener('click', ev => { if (ev.target === bd) this.closeModal('#' + bd.id); });
+      bd.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => this.closeModal('#' + bd.id)));
+    });
+    document.addEventListener('keydown', ev => {
+      if (ev.key === 'Escape') { this.closeModal('#wModal'); this.closeModal('#doneModal'); }
+    });
+    $('#wToggle').addEventListener('click', () => {
+      const w = App.engine.cluster.byId(App.openWorkerId); if (!w) return;
+      if (w.online && App.engine.cluster.online().length === 1) this.log('WARN', 'Atención: es el último worker en línea; la simulación quedará detenida');
+      App.engine.setWorkerOnline(w, !w.online);
+      this._histLen = -1;
+      Renderer.render();
+    });
+    $('#runAgain').addEventListener('click', () => { this.closeModal('#doneModal'); this.newEngine(); this.start(); });
+    $('#doneAnalysis').addEventListener('click', () => { this.closeModal('#doneModal'); $('#perf').scrollIntoView({ behavior: 'smooth' }); });
+  },
+  closeModal(sel) {
+    const m = $(sel); if (!m || m.hidden) return;
+    m.hidden = true;
+    if (sel === '#wModal') {
+      const id = App.openWorkerId; App.openWorkerId = null;
+      const r = Renderer.ref(id); if (r) r.el.focus();
+    }
+  },
+  openWorker(id) {
+    App.openWorkerId = id; this._histLen = -1;
+    $('#wModal').hidden = false;
+    this.renderWorkerModal();
+    $('#wModal [data-close]').focus();
+  },
+  renderWorkerModal() {
+    const e = App.engine, w = e.cluster.byId(App.openWorkerId);
+    if (!w) { this.closeModal('#wModal'); return; }
+    const n = e.cluster.workers.length;
+    const localGB = e.storage.datasetGB * Math.min(SIM.REPLICATION, n) / n;
+    const lookups = w.cache.hits + w.cache.misses;
+    $('#wTitle').innerHTML = `${ICON_SERVER} ${w.name} <span class="pill ${w.status}">${w.status}</span>`;
+    const tile = (lbl, val, sub) => `<div class="stat"><span>${lbl}</span><b>${val}</b>${sub ? `<small>${sub}</small>` : ''}</div>`;
+    $('#wBody').innerHTML = `<div class="mgrid">
+      ${tile('CPU', pct(w.cpuPct), `${f1(w.cpuUsed)} / ${w.cpuTotal} cores`)}
+      ${tile('Memory', pct(w.memPct), `${f1(Math.min(w.memoryUsedRaw, w.memoryTotal))} / ${w.memoryTotal} GB`)}
+      ${tile('Cache', pct(w.cachePct), `${f1(w.cache.usedGB)} / ${w.cache.capacityGB} GB`)}
+      ${tile('Tasks', w.running.length + w.queue.length, `${w.running.length} running · ${w.queue.length} en cola`)}
+      ${tile('Completed', w.completed, `${w.failed} intentos fallidos`)}
+      ${tile('Throughput', f1(w.throughput(e.time)) + ' t/s', 'ventana de 3 s')}
+      ${tile('Cache Hits', lookups ? pct(w.cache.hits / lookups * 100) : '—', `${w.cache.hits} hits · ${w.cache.misses} misses`)}
+      ${tile('RDD / HDFS', f1(localGB) + ' GB', 'réplicas locales')}
+      ${tile('Executor', w.executor.id, `${w.cache.evictions} evictions LRU`)}
+    </div>`;
+    if (this._histLen !== w.history.length) {
+      this._histLen = w.history.length;
+      const hist = $('#wHist'), top = hist.scrollTop;
+      hist.innerHTML = w.history.length ? w.history.slice().reverse().map(h => {
+        const st = h.status === 'COMPLETED' ? '<span class="ok">✓ OK</span>' : '<span class="bad">✗ FAIL</span>';
+        const src = h.stage > 0 ? 'shuffle' : h.hit ? '<span class="ok">cache hit</span>' : '<span class="warn">hdfs read</span>';
+        return `<div class="hist-row"><span>${h.name}</span><span>${h.job}</span><span>S${h.stage} · ${src} · ${f2(h.dur)} s</span>${st}</div>`;
+      }).join('') : '<div class="empty">Este worker aún no ha ejecutado tasks</div>';
+      hist.scrollTop = top;
+    }
+    $('#wToggle').innerHTML = w.online ? '⚠ Simular caída del nodo' : '↺ Reconectar nodo';
+  },
+  showDone(s) {
+    const tile = (lbl, val, cls) => `<div class="stat"><span>${lbl}</span><b class="${cls || ''}">${val}</b></div>`;
+    const notes = [];
+    if (s.failed) notes.push(`${s.failed} tasks fallaron de forma definitiva; con memoria al límite aumentan los OutOfMemory.`);
+    if (s.utilization < 50) notes.push('El clúster estuvo subutilizado: hay más núcleos que paralelismo disponible en la carga.');
+    if (s.utilization >= 80) notes.push('Clúster casi saturado durante la ejecución: agregar workers reduciría la cola.');
+    if (s.hitRate < 35) notes.push('Hit rate bajo: más caché o un dataset más pequeño evitarían lecturas a HDFS.');
+    if (!notes.length) notes.push('Ejecución equilibrada: buena utilización y caché efectiva.');
+    $('#doneBody').innerHTML = `
+      <div class="done-hero"><div class="check">✓</div><div><b>Todas las tasks terminaron</b><div class="muted small">${s.workers} workers · ${s.users} usuarios</div></div></div>
+      <div class="mgrid">
+        ${tile('Total Jobs', s.jobs)}${tile('Total Tasks', s.tasks)}${tile('Completed', s.completed, 'ok')}
+        ${tile('Failed', s.failed, s.failed ? 'bad' : '')}${tile('Execution Time', f1(s.execTime) + ' s')}${tile('Avg Task Time', f2(s.avgTaskTime) + ' s')}
+        ${tile('Throughput', f1(s.throughput) + ' t/s')}${tile('Cache Hit Rate', pct(s.hitRate))}${tile('Cluster Utilization', pct(s.utilization))}
+      </div>
+      <div class="insight">${notes.join(' ')}</div>`;
+    $('#doneModal').hidden = false;
+    $('#runAgain').focus();
+  }
+};
+
+function scalingInsight(cfg, res) {
+  if (res.length < 2) return 'Se necesitan al menos dos configuraciones para comparar.';
+  const a = res[0], b = res[res.length - 1];
+  const sp = a.execTime / b.execTime, eff = sp / (b.workers / a.workers) * 100;
+  const stage0 = stageSizes(cfg.tasksPerJob)[0];
+  const paral = cfg.users * stage0, coresB = b.workers * cfg.cores;
+  let why;
+  if (paral < coresB) why = `El paralelismo máximo de la carga (~${paral} tasks simultáneas: ${cfg.users} usuarios × ${stage0} tasks del primer stage) es menor que los ${coresB} núcleos de ${b.workers} workers, así que parte del clúster queda ociosa (utilización ${pct(b.utilization)}).`;
+  else why = `Las barreras entre stages (shuffle), la llegada escalonada de jobs y las lecturas a HDFS impiden que la mejora sea lineal.`;
+  const cache = `Más nodos también suman caché total (${a.workers * cfg.cacheGB} → ${b.workers * cfg.cacheGB} GB): el hit rate pasa de ${pct(a.hitRate)} a ${pct(b.hitRate)}.`;
+  return `Pasar de <strong>${a.workers}</strong> a <strong>${b.workers} workers</strong> reduce el tiempo de ${f1(a.execTime)} s a ${f1(b.execTime)} s: <strong>speedup ${f2(sp)}×</strong> con eficiencia paralela de ${Math.round(eff)}%. ${why} ${cache}`;
+}
+
+/* =========================================================
+   8. TEMA Y ARRANQUE
+   ========================================================= */
+function applyTheme(t) {
+  document.documentElement.dataset.theme = t;
+  const btn = $('#themeBtn');
+  btn.textContent = t === 'dark' ? '☀' : '☾';
+  btn.title = t === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro';
+}
+
+function frame(now) {
+  const dt = Math.min(0.1, (now - (App.lastFrame || now)) / 1000);
+  App.lastFrame = now;
+  const e = App.engine;
+  if (App.state === 'RUNNING' && !e.done) {
+    let sim = dt * App.speed;
+    while (sim > 1e-9) { const d = Math.min(0.05, sim); e.step(d); sim -= d; if (e.done) break; }
+    if (e.done) UI.complete();
+  }
+  if (now - App.lastRender >= 90) { App.lastRender = now; Renderer.render(); }
+  requestAnimationFrame(frame);
+}
+
+function boot() {
+  let theme = Store.get('theme', null);
+  if (theme !== 'dark' && theme !== 'light') theme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  applyTheme(theme);
+  App.cfg = normalizeCfg(Store.get('cfg', DEFAULT_CFG));
+  App.draft = { ...App.cfg };
+  App.history = Array.isArray(Store.get('history', [])) ? Store.get('history', []) : [];
+  Renderer.init();
+  Charts.init();
+  UI.init();
+  UI.updateConfigUI();
+  UI.renderHistory();
+  Renderer.rebuildLogs();
+  UI.newEngine();
+  UI.log('SYS', `Clúster listo · ${App.cfg.workers} workers en línea. Pulsa START SIMULATION.`);
+  requestAnimationFrame(frame);
+}
+boot();
+</script>
+</body>
+</html>
